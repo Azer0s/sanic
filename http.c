@@ -1,3 +1,5 @@
+#define DEFINE_LOG_LEVEL
+
 #include "http.h"
 #include "http_request.h"
 #include "log.h"
