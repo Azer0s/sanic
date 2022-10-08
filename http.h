@@ -1,10 +1,18 @@
+#ifndef SANIC_HTTP_H
+#define SANIC_HTTP_H
 
-struct http_request {};
+#include <stdint.h>
+#include "request.h"
 
-#define http_do(action)                                                        \
-  ({                                                                           \
-    void __fn__(struct http_request *req) action;                              \
-    __fn__;                                                                    \
-  })
+struct sanic_route;
 
-void http_on_get(const char *route, void (*callback)(struct http_request *req));
+struct sanic_route {
+    const char *path;
+    void (^callback)(struct sanic_http_request *);
+    struct sanic_route *next;
+};
+
+void sanic_http_on_get(const char *route, void (^callback)(struct sanic_http_request *req));
+int sanic_http_serve(uint16_t port);
+
+#endif //SANIC_HTTP_H

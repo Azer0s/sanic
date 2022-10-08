@@ -2,6 +2,9 @@
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
-  http_on_get("/", http_do({ printf("Hello!"); }));
-  return 0;
+  sanic_http_on_get("/", ^void(struct sanic_http_request *req) {
+      printf("Hello!");
+  });
+
+  return sanic_http_serve(8080);
 }
