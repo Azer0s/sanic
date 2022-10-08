@@ -5,7 +5,6 @@
 #include <assert.h>
 #include <ctype.h>
 #include "request.h"
-#include "http.h"
 
 void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n) {
   int i = 0;
@@ -90,6 +89,8 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t
 }
 
 struct sanic_http_request *sanic_read_request(int fd) {
+  //TODO: Add error handling for invalid HTTP requests
+
   FILE *conn_file;
 
   if ((conn_file = fdopen(fd, "r")) == NULL) {
