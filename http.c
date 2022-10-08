@@ -21,6 +21,7 @@ void insert_route(struct sanic_route route) {
   *current = malloc(sizeof(struct sanic_route));
   (*current)->path = route.path;
   (*current)->callback = route.callback;
+  (*current)->next = NULL;
 }
 
 void sanic_http_on_get(const char *path, void (^callback)(struct sanic_http_request *)) {
@@ -114,6 +115,8 @@ int sanic_http_serve(uint16_t port) {
     fflush(conn_file);
 
     close(conn_fd);
+
+    sanic_destroy_request(request);
   }
 
   return 0;

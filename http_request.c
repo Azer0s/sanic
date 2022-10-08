@@ -86,6 +86,7 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t
   *current = malloc(sizeof(struct sanic_http_header));
   (*current)->key = key;
   (*current)->value = value;
+  (*current)->next = NULL;
 }
 
 struct sanic_http_request *sanic_read_request(int fd) {
@@ -113,6 +114,7 @@ struct sanic_http_request *sanic_read_request(int fd) {
   } mode = PATH;
 
   struct sanic_http_request *request = malloc(sizeof(struct sanic_http_request));
+  request->headers = NULL;
 
   ssize_t n;
   while ((n = getline(&tmp, &size, conn_file)) > 0) {
@@ -151,6 +153,8 @@ void sanic_destroy_request(struct sanic_http_request *request) {
   while (*current != NULL) {
     struct sanic_http_header *old = *current;
     current = &(*current)->next;
+    free(old->key);
+    free(old->value);
     free(old);
   }
 
