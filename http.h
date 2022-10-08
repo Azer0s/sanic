@@ -2,7 +2,7 @@
 #define SANIC_HTTP_H
 
 #include <stdint.h>
-#include "request.h"
+#include "http_request.h"
 
 struct sanic_route;
 

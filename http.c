@@ -1,10 +1,9 @@
 #include "http.h"
-#include "request.h"
+#include "http_request.h"
+#include "log.h"
 #include <arpa/inet.h>
-#include <assert.h>
 #include <netinet/in.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -35,7 +34,7 @@ volatile sig_atomic_t stop;
 volatile int sock_fd;
 
 void sig_handler(int signum) {
-  printf("shutting down server\n");
+  sanic_log_info("shutting down server");
   close(sock_fd);
   stop = 1;
   exit(0);
@@ -47,10 +46,10 @@ int sanic_http_serve(uint16_t port) {
 
   sock_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (sock_fd == -1) {
-    fprintf(stderr, "socket creation failed\n");
+    sanic_log_error("socket creation failed");
     return 1;
   }
-  printf("socket successfully created\n");
+  sanic_log_trace("socket successfully created");
 
   struct sockaddr_in sock_addr;
   sock_addr.sin_family = AF_INET;
@@ -58,29 +57,29 @@ int sanic_http_serve(uint16_t port) {
   sock_addr.sin_port = htons(port);
 
   if (bind(sock_fd, (struct sockaddr *) &sock_addr, sizeof(sock_addr)) != 0) {
-    fprintf(stderr, "socket bind failed\n");
+    sanic_log_error("socket bind failed");
     return 1;
   }
-  printf("socket bind successful\n");
+  sanic_fmt_log_trace("socket bind to port %d successful", port);
 
   if (listen(sock_fd, 128) != 0) {
-    fprintf(stderr, "listen failed\n");
+    sanic_fmt_log_error("listen on port %d failed", port);
     return 1;
   }
-  printf("server listening\n");
+  sanic_log_info("server listening");
 
   while (!stop) {
     struct sockaddr_in conn_addr;
     size_t len = sizeof(conn_addr);
     int conn_fd = accept(sock_fd, (struct sockaddr *) &conn_addr, (socklen_t *) &len);
     if (conn_fd < 0) {
-      fprintf(stderr, "server accept failed\n");
+      sanic_log_warn("server accept failed");
       break;
     }
 
     char addr_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(conn_addr.sin_addr), addr_str, INET_ADDRSTRLEN);
-    printf("serving %s\n", addr_str);
+    sanic_fmt_log_info("serving %s", addr_str);
 
     struct sanic_http_request *request = sanic_read_request(conn_fd);
     free(request);
