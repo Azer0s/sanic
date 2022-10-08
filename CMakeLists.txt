@@ -5,8 +5,6 @@ project(sanic_main C)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_COMPILER clang)
 
-add_compile_options(-fblocks -lBlocksRuntime)
-
 add_library(sanic http.c http_request.c http_response.c http_header.h http_method.h log.h)
 add_executable(sanic_main main.c)
 
