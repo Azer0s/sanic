@@ -18,7 +18,7 @@ enum sanic_log_level_enum {
     LEVEL_ERROR
 };
 
-enum sanic_log_level_enum sanic_log_level;
+extern enum sanic_log_level_enum sanic_log_level;
 
 #define sanic_log_trace(str) if(sanic_log_level <= LEVEL_TRACE) { printf(ANSI_COLOR_CYAN "[TRACE] "  str ANSI_COLOR_RESET "\n"); }
 #define sanic_fmt_log_trace(str, ...) if(sanic_log_level <= LEVEL_TRACE) { printf(ANSI_COLOR_CYAN "[TRACE] "  str ANSI_COLOR_RESET "\n", __VA_ARGS__); }
