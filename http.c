@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <string.h>
 
+enum sanic_log_level_enum sanic_log_level;
+
 struct sanic_route *routes = NULL;
 
 void insert_route(struct sanic_route route) {
