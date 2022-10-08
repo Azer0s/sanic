@@ -142,3 +142,17 @@ struct sanic_http_request *sanic_read_request(int fd) {
 
   return request;
 }
+
+void sanic_destroy_request(struct sanic_http_request *request) {
+  free(request->path);
+  free(request->version);
+
+  struct sanic_http_header **current = &request->headers;
+  while (*current != NULL) {
+    struct sanic_http_header *old = *current;
+    current = &(*current)->next;
+    free(old);
+  }
+
+  free(request);
+}

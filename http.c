@@ -82,9 +82,34 @@ int sanic_http_serve(uint16_t port) {
     sanic_fmt_log_info("serving %s", addr_str);
 
     struct sanic_http_request *request = sanic_read_request(conn_fd);
-    free(request);
+    request->conn_fd = conn_fd;
+
+    struct sanic_route **current = &routes;
+    while (1) {
+      if (*current == NULL) {
+        break;
+      }
+
+      if (strcmp(request->path, (*current)->path) == 0) {
+        break;
+      }
+
+      current = &(*current)->next;
+    }
+
+    if (*current == NULL) {
+      sanic_fmt_log_warn("no route %s found", request->path);
+      FILE *conn_file = fdopen(conn_fd, "w+");
+      fprintf(conn_file, "HTTP/1.1 404 OK\nConnection: Closed\n\n");
+      fflush(conn_file);
+      close(conn_fd);
+      continue;
+    }
+
+    sanic_fmt_log_trace("handling request for route %s", request->path);
 
     FILE *conn_file = fdopen(conn_fd, "w+");
+    (*current)->callback(request);
     fprintf(conn_file, "HTTP/1.1 200 OK\nConnection: Closed\n\n<h1>Hello</h1>");
     fflush(conn_file);
 
