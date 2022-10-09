@@ -9,4 +9,4 @@ struct sanic_http_header {
     struct sanic_http_header *next;
 };
 
-#endif //SANIC_MAIN_HTTP_HEADER_H
+#endif //SANIC_HTTP_HEADER_H

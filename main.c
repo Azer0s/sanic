@@ -7,7 +7,7 @@
 
 #ifdef USE_CLANG_BLOCKS
 
-int main(int argc, char *argv[]) {
+int main() {
   sanic_log_level = LEVEL_TRACE;
 
   sanic_use_middleware((struct sanic_middleware) {
@@ -65,7 +65,7 @@ enum sanic_middleware_action hello_filter(struct sanic_http_request *req, struct
   return ACTION_PASS;
 }
 
-int main(int argc, char *argv[]) {
+int main() {
   sanic_log_level = LEVEL_TRACE;
 
   sanic_use_middleware((struct sanic_middleware) { .callback = foobar_filter });

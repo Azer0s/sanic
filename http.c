@@ -77,8 +77,8 @@ void sanic_http_on_get(const char *path,
 volatile sig_atomic_t stop;
 volatile int sock_fd;
 
-void sig_handler(int signum) {
-  sanic_log_info("shutting down server");
+void sig_handler(__attribute__((unused)) int signum) {
+  sanic_log_info("shutting down server")
   close(sock_fd);
   stop = 1;
   exit(0);
@@ -111,10 +111,10 @@ int sanic_http_serve(uint16_t port) {
 
   sock_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (sock_fd == -1) {
-    sanic_log_error("socket creation failed");
+    sanic_log_error("socket creation failed")
     return 1;
   }
-  sanic_log_trace("socket successfully created");
+  sanic_log_trace("socket successfully created")
 
   struct sockaddr_in sock_addr;
   sock_addr.sin_family = AF_INET;
@@ -122,16 +122,16 @@ int sanic_http_serve(uint16_t port) {
   sock_addr.sin_port = htons(port);
 
   if (bind(sock_fd, (struct sockaddr *) &sock_addr, sizeof(sock_addr)) != 0) {
-    sanic_log_error("socket bind failed");
+    sanic_log_error("socket bind failed")
     return 1;
   }
-  sanic_fmt_log_trace("socket bind to port %d successful", port);
+  sanic_fmt_log_trace("socket bind to port %d successful", port)
 
   if (listen(sock_fd, 128) != 0) {
-    sanic_fmt_log_error("listen on port %d failed", port);
+    sanic_fmt_log_error("listen on port %d failed", port)
     return 1;
   }
-  sanic_log_info("server listening");
+  sanic_log_info("server listening")
 
   connection_loop:
   while (!stop) {
@@ -139,13 +139,13 @@ int sanic_http_serve(uint16_t port) {
     size_t len = sizeof(conn_addr);
     int conn_fd = accept(sock_fd, (struct sockaddr *) &conn_addr, (socklen_t *) &len);
     if (conn_fd < 0) {
-      sanic_log_warn("server accept failed");
+      sanic_log_warn("server accept failed")
       continue;
     }
 
     char addr_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(conn_addr.sin_addr), addr_str, INET_ADDRSTRLEN);
-    sanic_fmt_log_info("serving %s", addr_str);
+    sanic_fmt_log_info("serving %s", addr_str)
 
     struct sanic_http_request *request = sanic_read_request(conn_fd);
     request->conn_fd = conn_fd;
@@ -155,13 +155,13 @@ int sanic_http_serve(uint16_t port) {
     response->response_body = malloc(1);
     bzero(response->response_body, 1);
 
-    sanic_fmt_log_trace("processing middleware for %s", addr_str);
+    sanic_fmt_log_trace("processing middleware for %s", addr_str)
 
     struct sanic_middleware **current_middleware = &middlewares;
     while (*current_middleware != NULL) {
       enum sanic_middleware_action action = (*current_middleware)->callback(request, response);
       if (action == ACTION_STOP) {
-        sanic_fmt_log_warn("stopping request from %s due to middleware response", addr_str);
+        sanic_fmt_log_warn("stopping request from %s due to middleware response", addr_str)
         finish_request(request, response);
         goto connection_loop;
       }
@@ -183,12 +183,12 @@ int sanic_http_serve(uint16_t port) {
     }
 
     if (*current_route == NULL) {
-      sanic_fmt_log_warn("no route %s found", request->path);
+      sanic_fmt_log_warn("no route %s found", request->path)
       finish_request(request, response);
       continue;
     }
 
-    sanic_fmt_log_trace("handling request for route %s", request->path);
+    sanic_fmt_log_trace("handling request for route %s", request->path)
     response->status = 200;
     (*current_route)->callback(request, response);
     finish_request(request, response);

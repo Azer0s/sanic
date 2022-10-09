@@ -6,7 +6,7 @@
 struct sanic_http_response {
     int status;
     char *response_body;
-    struct sanic_http_header *headers;
+    __attribute__((unused)) struct sanic_http_header *headers;
 };
 
 #endif //SANIC_HTTP_RESPONSE_H

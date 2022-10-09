@@ -18,8 +18,8 @@ struct sanic_route {
 #endif
 
     struct sanic_route *next;
-    char **parts;
-    size_t parts_count;
+    __attribute__((unused)) char **parts;
+    __attribute__((unused)) size_t parts_count;
 };
 
 #ifdef USE_CLANG_BLOCKS
