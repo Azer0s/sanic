@@ -22,10 +22,41 @@ void insert_route(struct sanic_route route) {
     current = &(*current)->next;
   }
 
+  //TODO: parse route parts and param filter
+
+  size_t parts_count = 0;
+  char **parts = NULL;
+
+  char buf[1000];
+  bzero(buf, 1000);
+  int str_count = 0;
+
+  size_t route_path_len = strlen(route.path);
+  int i = 0;
+  do {
+    if ((route.path[i] == '/' && i != 0) || i == route_path_len) {
+      str_count = 0;
+      parts_count++;
+
+      char *p = malloc(strlen(buf));
+      strcpy(p, buf);
+      parts = realloc(parts, parts_count * sizeof(char*));
+      parts[parts_count - 1] = p;
+
+      bzero(buf, 1000);
+    }
+
+    buf[str_count] = route.path[i];
+    str_count++;
+    i++;
+  } while (i <= route_path_len);
+
   *current = malloc(sizeof(struct sanic_route));
   (*current)->path = route.path;
   (*current)->callback = route.callback;
   (*current)->next = NULL;
+  (*current)->parts = parts;
+  (*current)->parts_count = parts_count;
 }
 
 void sanic_http_on_get(const char *path, void (^callback)(struct sanic_http_request *)) {
