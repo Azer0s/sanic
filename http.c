@@ -59,7 +59,13 @@ void insert_route(struct sanic_route route) {
   (*current)->parts_count = parts_count;
 }
 
-void sanic_http_on_get(const char *path, void (^callback)(struct sanic_http_request *)) {
+void sanic_http_on_get(const char *path,
+#ifdef USE_CLANG_BLOCKS
+  void (^callback)(struct sanic_http_request *)
+#else
+  void (*callback)(struct sanic_http_request *)
+#endif
+  ){
   struct sanic_route route;
   route.path = path;
   route.callback = callback;
