@@ -5,6 +5,27 @@
 #include "log.h"
 #include "middleware.h"
 
+enum sanic_middleware_action http_version_filter(struct sanic_http_request *req, struct sanic_http_response *res) {
+  char version[4];
+  bzero(version, 4);
+  strcpy(version, req->version + 5);
+
+  char *err;
+  double version_num = strtod(version, &err);
+
+  if (version == err) {
+    res->status = 400;
+    return ACTION_STOP;
+  }
+
+  if (version_num >= 2) {
+    res->status = 505;
+    return ACTION_STOP;
+  }
+
+  return ACTION_PASS;
+}
+
 #ifdef USE_CLANG_BLOCKS
 
 int main() {
@@ -12,16 +33,16 @@ int main() {
 
   sanic_use_middleware((struct sanic_middleware) {
           .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
-              if (strcmp(req->path, "/foobar") == 0) {
-                return ACTION_STOP;
-              }
-              return ACTION_PASS;
+              return http_version_filter(req, res);
           }
   });
 
   sanic_use_middleware((struct sanic_middleware) {
           .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
-              printf("Hello from my middleware!\n");
+              if (strcmp(req->path, "/teapot") == 0) {
+                res->status = 418;
+                return ACTION_STOP;
+              }
               return ACTION_PASS;
           }
   });
@@ -53,23 +74,19 @@ void handle_get_person(struct sanic_http_request *req, struct sanic_http_respons
   printf("Hello %s!\n", "foo");
 }
 
-enum sanic_middleware_action foobar_filter(struct sanic_http_request *req, struct sanic_http_response *res) {
-  if (strcmp(req->path, "/foobar") == 0) {
+enum sanic_middleware_action teapot_filter(struct sanic_http_request *req, struct sanic_http_response *res) {
+  if (strcmp(req->path, "/teapot") == 0) {
+    res->status = 418;
     return ACTION_STOP;
   }
-  return ACTION_PASS;
-}
-
-enum sanic_middleware_action hello_filter(struct sanic_http_request *req, struct sanic_http_response *res) {
-  printf("Hello from my middleware!\n");
   return ACTION_PASS;
 }
 
 int main() {
   sanic_log_level = LEVEL_TRACE;
 
-  sanic_use_middleware((struct sanic_middleware) { .callback = foobar_filter });
-  sanic_use_middleware((struct sanic_middleware) { .callback = hello_filter });
+  sanic_use_middleware((struct sanic_middleware) { .callback = http_version_filter });
+  sanic_use_middleware((struct sanic_middleware) { .callback = teapot_filter });
 
   sanic_http_on_get("/", handle_index);
   sanic_http_on_get("/people/{:name}", handle_get_person);

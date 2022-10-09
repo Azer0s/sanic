@@ -84,20 +84,25 @@ void sig_handler(__attribute__((unused)) int signum) {
   exit(0);
 }
 
-void finish_request(struct sanic_http_request *req, struct sanic_http_response *res) {
+void finish_request(struct sanic_http_request *req, struct sanic_http_response *res, char *addr_str) {
   FILE *conn_file = fdopen(req->conn_fd, "w+");
 
   //TODO: handle headers
+  int status = res->status == -1 ? 404 : res->status;
 
   if (res->response_body != NULL) {
-    fprintf(conn_file, "HTTP/1.1 %d OK\nConnection: Closed\n\n%s", res->status == -1 ? 404 : res->status,
-            res->response_body);
+    fprintf(conn_file, "HTTP/1.1 %d %s\nConnection: Closed\n\n%s", status, sanic_get_status_text(status), res->response_body);
   } else {
-    fprintf(conn_file, "HTTP/1.1 %d OK\nConnection: Closed\n\n", res->status == -1 ? 404 : res->status);
+    fprintf(conn_file, "HTTP/1.1 %d %s\nConnection: Closed\n\n", status, sanic_get_status_text(status));
   }
 
   fflush(conn_file);
-  close(req->conn_fd);
+
+  if (close(req->conn_fd) == 0) {
+    sanic_fmt_log_trace("closed connection to %s", addr_str)
+  } else {
+    sanic_fmt_log_warn("failed to close connection to %s", addr_str)
+  }
 
   sanic_destroy_request(req);
 
@@ -131,7 +136,7 @@ int sanic_http_serve(uint16_t port) {
     sanic_fmt_log_error("listen on port %d failed", port)
     return 1;
   }
-  sanic_log_info("server listening")
+  sanic_fmt_log_info("server listening on port %d", port)
 
   connection_loop:
   while (!stop) {
@@ -153,6 +158,7 @@ int sanic_http_serve(uint16_t port) {
     struct sanic_http_response *response = malloc(sizeof(struct sanic_http_response));
     response->headers = NULL;
     response->response_body = malloc(1);
+    response->status = -1;
     bzero(response->response_body, 1);
 
     sanic_fmt_log_trace("processing middleware for %s", addr_str)
@@ -162,7 +168,7 @@ int sanic_http_serve(uint16_t port) {
       enum sanic_middleware_action action = (*current_middleware)->callback(request, response);
       if (action == ACTION_STOP) {
         sanic_fmt_log_warn("stopping request from %s due to middleware response", addr_str)
-        finish_request(request, response);
+        finish_request(request, response, addr_str);
         goto connection_loop;
       }
 
@@ -184,14 +190,14 @@ int sanic_http_serve(uint16_t port) {
 
     if (*current_route == NULL) {
       sanic_fmt_log_warn("no route %s found", request->path)
-      finish_request(request, response);
+      finish_request(request, response, addr_str);
       continue;
     }
 
     sanic_fmt_log_trace("handling request for route %s", request->path)
     response->status = 200;
     (*current_route)->callback(request, response);
-    finish_request(request, response);
+    finish_request(request, response, addr_str);
   }
 
   return 0;
