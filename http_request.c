@@ -62,6 +62,8 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
 }
 
 void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t n) {
+  //TODO: check header for format validity
+
   int i = 0;
   while (tmp[i] != ' ') {
     ++i;

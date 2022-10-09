@@ -110,7 +110,7 @@ int sanic_http_serve(uint16_t port) {
     int conn_fd = accept(sock_fd, (struct sockaddr *) &conn_addr, (socklen_t *) &len);
     if (conn_fd < 0) {
       sanic_log_warn("server accept failed");
-      break;
+      continue;
     }
 
     char addr_str[INET_ADDRSTRLEN];
