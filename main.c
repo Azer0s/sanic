@@ -32,30 +32,33 @@ int main() {
   sanic_log_level = LEVEL_TRACE;
 
   sanic_use_middleware((struct sanic_middleware) {
-          .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
-              return http_version_filter(req, res);
-          }
+    .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
+      return http_version_filter(req, res);
+    }
   });
 
   sanic_use_middleware((struct sanic_middleware) {
-          .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
-              if (strcmp(req->path, "/teapot") == 0) {
-                res->status = 418;
-                return ACTION_STOP;
-              }
-              return ACTION_PASS;
-          }
+    .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
+      if (strcmp(req->path, "/teapot") == 0) {
+        res->status = 418;
+        return ACTION_STOP;
+      }
+      return ACTION_PASS;
+    }
   });
 
   sanic_http_on_get("/", ^void(struct sanic_http_request *req, struct sanic_http_response *res) {
-      const char *html = "<h1>Hello, World!</h1>";
-      //res->response_body is always pre-allocated with size 1
-      res->response_body = realloc(res->response_body, strlen(html));
-      strcpy(res->response_body, html);
+    const char *html = "<h1>Hello, World!</h1>";
+    //res->response_body is always pre-allocated with size 1
+    res->response_body = realloc(res->response_body, strlen(html));
+    strcpy(res->response_body, html);
   });
 
   sanic_http_on_get("/people/{:name}", ^void(struct sanic_http_request *req, struct sanic_http_response *res) {
-      printf("Hello %s!\n", "foo");
+    char *name = sanic_get_params_value(req, "name");
+    char *html_template = "<h1>Hello, %s!</h1>";
+    res->response_body = realloc(res->response_body, strlen(html_template) + strlen(name) - 2);
+    sprintf(res->response_body, html_template, name);
   });
 
   return sanic_http_serve(8080);
@@ -71,7 +74,10 @@ void handle_index(struct sanic_http_request *req, struct sanic_http_response *re
 }
 
 void handle_get_person(struct sanic_http_request *req, struct sanic_http_response *res) {
-  printf("Hello %s!\n", "foo");
+  char *name = sanic_get_params_value(req, "name");
+  char *html_template = "<h1>Hello, %s!</h1>";
+  res->response_body = realloc(res->response_body, strlen(html_template) + strlen(name) - 2);
+  sprintf(res->response_body, html_template, name);
 }
 
 enum sanic_middleware_action teapot_filter(struct sanic_http_request *req, struct sanic_http_response *res) {

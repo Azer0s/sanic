@@ -16,4 +16,6 @@ struct sanic_http_request *sanic_read_request(int fd);
 
 void sanic_destroy_request(struct sanic_http_request *request);
 
+char *sanic_get_params_value(struct sanic_http_request *request, const char *key);
+
 #endif //SANIC_HTTP_REQUEST_H

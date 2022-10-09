@@ -10,11 +10,17 @@ Originally, I built sanic with clang blocks in mind. So they're supported out of
 sanic_log_level = LEVEL_INFO;
 
 sanic_http_on_get("/", ^void(struct sanic_http_request *req) {
-    printf("Hello!\n");
+  const char *html = "<h1>Hello, World!</h1>";
+  //res->response_body is always pre-allocated with size 1
+  res->response_body = realloc(res->response_body, strlen(html));
+  strcpy(res->response_body, html);
 });
 
 sanic_http_on_get("/people/{:name}", ^void(struct sanic_http_request *req) {
-    printf("Hello %s!\n", sanic_get_params_value(request, "name"));
+  char *name = sanic_get_params_value(req, "name");
+  char *html_template = "<h1>Hello, %s!</h1>";
+  res->response_body = realloc(res->response_body, strlen(html_template) + strlen(name) - 2);
+  sprintf(res->response_body, html_template, name);
 });
 
 return sanic_http_serve(8080);
@@ -32,38 +38,18 @@ sanic_http_on_get("/people/{:name}", handle_get_person);
 return sanic_http_serve(8080);
 ```
 
-```c
-// This should work in GNU C
-
-sanic_http_on_get("/", ({
-    void _(struct sanic_http_request *req) {
-        printf("Hello!\n");
-    }
-    _;
-}));
-
-sanic_http_on_get("/people/{:name}", ({
-    void _(struct sanic_http_request *req) {
-        printf("Hello %s!\n", sanic_get_params_value(request, "name"));
-    }
-    _;
-}));
-
-return sanic_http_serve(8080);
-```
-
 ### Middlewares
 
 sanic supports middlewares out of the box. These can either act as filters or as blockers for any request.
 
 ```c
 sanic_use_middleware((struct sanic_middleware) {
-          .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
-              if (strcmp(req->path, "/foobar") == 0) {
-                res->status = 300;
-                return ACTION_STOP;
-              }
-              return ACTION_PASS;
-          }
-  });
+  .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
+    if (strcmp(req->path, "/foobar") == 0) {
+      res->status = 300;
+      return ACTION_STOP;
+    }
+    return ACTION_PASS;
+  }
+});
 ```

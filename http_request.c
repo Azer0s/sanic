@@ -162,3 +162,7 @@ void sanic_destroy_request(struct sanic_http_request *request) {
 
   free(request);
 }
+
+char *sanic_get_params_value(struct sanic_http_request *request, const char *key) {
+  return "";
+}
