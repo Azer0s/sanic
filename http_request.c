@@ -19,23 +19,23 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
   }
 
   if (strcmp(method, "GET") == 0) {
-    request->method = GET;
+    request->method = METHOD_GET;
   } else if (strcmp(method, "HEAD") == 0) {
-    request->method = HEAD;
+    request->method = METHOD_HEAD;
   } else if (strcmp(method, "POST") == 0) {
-    request->method = POST;
+    request->method = METHOD_POST;
   } else if (strcmp(method, "PUT") == 0) {
-    request->method = PUT;
+    request->method = METHOD_PUT;
   } else if (strcmp(method, "DELETE") == 0) {
-    request->method = DELETE;
+    request->method = METHOD_DELETE;
   } else if (strcmp(method, "CONNECT") == 0) {
-    request->method = CONNECT;
+    request->method = METHOD_CONNECT;
   } else if (strcmp(method, "OPTIONS") == 0) {
-    request->method = OPTIONS;
+    request->method = METHOD_OPTIONS;
   } else if (strcmp(method, "TRACE") == 0) {
-    request->method = TRACE;
+    request->method = METHOD_TRACE;
   } else if (strcmp(method, "PATCH") == 0) {
-    request->method = PATCH;
+    request->method = METHOD_PATCH;
   }
 
   int from = ++i;

@@ -2,7 +2,9 @@
 
 #include "http.h"
 #include "http_request.h"
+#include "http_response.h"
 #include "log.h"
+#include "middleware.h"
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <signal.h>
@@ -40,7 +42,7 @@ void insert_route(struct sanic_route route) {
 
       char *p = malloc(strlen(buf));
       strcpy(p, buf);
-      parts = realloc(parts, parts_count * sizeof(char*));
+      parts = realloc(parts, parts_count * sizeof(char *));
       parts[parts_count - 1] = p;
 
       bzero(buf, 1000);
@@ -61,11 +63,11 @@ void insert_route(struct sanic_route route) {
 
 void sanic_http_on_get(const char *path,
 #ifdef USE_CLANG_BLOCKS
-  void (^callback)(struct sanic_http_request *)
+        void (^callback)(struct sanic_http_request *, struct sanic_http_response *)
 #else
-  void (*callback)(struct sanic_http_request *)
+        void (*callback)(struct sanic_http_request *, struct sanic_http_response *)
 #endif
-  ){
+) {
   struct sanic_route route;
   route.path = path;
   route.callback = callback;
@@ -80,6 +82,27 @@ void sig_handler(int signum) {
   close(sock_fd);
   stop = 1;
   exit(0);
+}
+
+void finish_request(struct sanic_http_request *req, struct sanic_http_response *res) {
+  FILE *conn_file = fdopen(req->conn_fd, "w+");
+
+  //TODO: handle headers
+
+  if (res->response_body != NULL) {
+    fprintf(conn_file, "HTTP/1.1 %d OK\nConnection: Closed\n\n%s", res->status == -1 ? 404 : res->status,
+            res->response_body);
+  } else {
+    fprintf(conn_file, "HTTP/1.1 %d OK\nConnection: Closed\n\n", res->status == -1 ? 404 : res->status);
+  }
+
+  fflush(conn_file);
+  close(req->conn_fd);
+
+  sanic_destroy_request(req);
+
+  free(res->response_body);
+  free(res);
 }
 
 int sanic_http_serve(uint16_t port) {
@@ -110,6 +133,7 @@ int sanic_http_serve(uint16_t port) {
   }
   sanic_log_info("server listening");
 
+  connection_loop:
   while (!stop) {
     struct sockaddr_in conn_addr;
     size_t len = sizeof(conn_addr);
@@ -126,38 +150,48 @@ int sanic_http_serve(uint16_t port) {
     struct sanic_http_request *request = sanic_read_request(conn_fd);
     request->conn_fd = conn_fd;
 
-    struct sanic_route **current = &routes;
-    while (1) {
-      if (*current == NULL) {
-        break;
+    struct sanic_http_response *response = malloc(sizeof(struct sanic_http_response));
+    response->headers = NULL;
+    response->response_body = malloc(1);
+    bzero(response->response_body, 1);
+
+    sanic_fmt_log_trace("processing middleware for %s", addr_str);
+
+    struct sanic_middleware **current_middleware = &middlewares;
+    while (*current_middleware != NULL) {
+      enum sanic_middleware_action action = (*current_middleware)->callback(request, response);
+      if (action == ACTION_STOP) {
+        sanic_fmt_log_warn("stopping request from %s due to middleware response", addr_str);
+        finish_request(request, response);
+        goto connection_loop;
       }
 
-      if (strcmp(request->path, (*current)->path) == 0) {
-        break;
-      }
-
-      current = &(*current)->next;
+      current_middleware = &(*current_middleware)->next;
     }
 
-    if (*current == NULL) {
+    struct sanic_route **current_route = &routes;
+    while (1) {
+      if (*current_route == NULL) {
+        break;
+      }
+
+      if (strcmp(request->path, (*current_route)->path) == 0) {
+        break;
+      }
+
+      current_route = &(*current_route)->next;
+    }
+
+    if (*current_route == NULL) {
       sanic_fmt_log_warn("no route %s found", request->path);
-      FILE *conn_file = fdopen(conn_fd, "w+");
-      fprintf(conn_file, "HTTP/1.1 404 OK\nConnection: Closed\n\n");
-      fflush(conn_file);
-      close(conn_fd);
+      finish_request(request, response);
       continue;
     }
 
     sanic_fmt_log_trace("handling request for route %s", request->path);
-
-    FILE *conn_file = fdopen(conn_fd, "w+");
-    (*current)->callback(request);
-    fprintf(conn_file, "HTTP/1.1 200 OK\nConnection: Closed\n\n<h1>Hello</h1>");
-    fflush(conn_file);
-
-    close(conn_fd);
-
-    sanic_destroy_request(request);
+    response->status = 200;
+    (*current_route)->callback(request, response);
+    finish_request(request, response);
   }
 
   return 0;

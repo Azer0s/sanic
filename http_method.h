@@ -2,15 +2,15 @@
 #define SANIC_HTTP_METHOD_H
 
 enum sanic_http_method {
-    GET,
-    HEAD,
-    POST,
-    PUT,
-    DELETE,
-    CONNECT,
-    OPTIONS,
-    TRACE,
-    PATCH
+    METHOD_GET,
+    METHOD_HEAD,
+    METHOD_POST,
+    METHOD_PUT,
+    METHOD_DELETE,
+    METHOD_CONNECT,
+    METHOD_OPTIONS,
+    METHOD_TRACE,
+    METHOD_PATCH
 };
 
 #endif //SANIC_HTTP_METHOD_H

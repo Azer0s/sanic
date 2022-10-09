@@ -13,6 +13,7 @@ struct sanic_http_request {
 };
 
 struct sanic_http_request *sanic_read_request(int fd);
-void sanic_destroy_request(struct sanic_http_request* request);
+
+void sanic_destroy_request(struct sanic_http_request *request);
 
 #endif //SANIC_HTTP_REQUEST_H

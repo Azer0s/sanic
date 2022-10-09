@@ -22,7 +22,8 @@ return sanic_http_serve(8080);
 
 ### Example - function pointers
 
-A less elegant solution is to just pass handler functions as callbacks. With gcc, this can be done in a lambda-ish way, although I haven't found out how to make cmake understand that.
+A less elegant solution is to just pass handler functions as callbacks. With gcc, this can be done in a lambda-ish way,
+although I haven't found out how to make cmake understand that.
 
 ```c
 sanic_http_on_get("/", handle_index);
@@ -35,17 +36,17 @@ return sanic_http_serve(8080);
 // This should work in GNU C
 
 sanic_http_on_get("/", ({
-  void _(struct sanic_http_request *req) {
-    printf("Hello!\n");
-  }
-  _;
+void _(struct sanic_http_request *req) {
+printf("Hello!\n");
+}
+_;
 }));
 
 sanic_http_on_get("/people/{:name}", ({
-  void _(struct sanic_http_request *req) {
-    printf("Hello %s!\n", sanic_get_params_value(request, "name"));
-  }
-  _;
+void _(struct sanic_http_request *req) {
+printf("Hello %s!\n", sanic_get_params_value(request, "name"));
+}
+_;
 }));
 
 return sanic_http_serve(8080);
