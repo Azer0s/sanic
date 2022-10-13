@@ -31,20 +31,16 @@ enum sanic_middleware_action http_version_filter(struct sanic_http_request *req,
 int main() {
   sanic_log_level = LEVEL_TRACE;
 
-  sanic_use_middleware((struct sanic_middleware) {
-    .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
-      return http_version_filter(req, res);
-    }
+  sanic_use_middleware(^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
+    return http_version_filter(req, res);
   });
 
-  sanic_use_middleware((struct sanic_middleware) {
-    .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
-      if (strcmp(req->path, "/teapot") == 0) {
-        res->status = 418;
-        return ACTION_STOP;
-      }
-      return ACTION_PASS;
+  sanic_use_middleware(^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
+    if (strcmp(req->path, "/teapot") == 0) {
+      res->status = 418;
+      return ACTION_STOP;
     }
+    return ACTION_PASS;
   });
 
   sanic_http_on_get("/", ^void(struct sanic_http_request *req, struct sanic_http_response *res) {
@@ -91,8 +87,8 @@ enum sanic_middleware_action teapot_filter(struct sanic_http_request *req, struc
 int main() {
   sanic_log_level = LEVEL_TRACE;
 
-  sanic_use_middleware((struct sanic_middleware) { .callback = http_version_filter });
-  sanic_use_middleware((struct sanic_middleware) { .callback = teapot_filter });
+  sanic_use_middleware(http_version_filter);
+  sanic_use_middleware(teapot_filter);
 
   sanic_http_on_get("/", handle_index);
   sanic_http_on_get("/people/{:name}", handle_get_person);
