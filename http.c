@@ -175,6 +175,11 @@ int sanic_http_serve(uint16_t port) {
       current_middleware = &(*current_middleware)->next;
     }
 
+    //TODO: handle path params
+    //TODO: handle query params
+    //TODO: add request validation
+    //TODO: add options for auto deserialization
+
     struct sanic_route **current_route = &routes;
     while (1) {
       if (*current_route == NULL) {

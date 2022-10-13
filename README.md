@@ -43,13 +43,11 @@ return sanic_http_serve(8080);
 sanic supports middlewares out of the box. These can either act as filters or as blockers for any request.
 
 ```c
-sanic_use_middleware((struct sanic_middleware) {
-  .callback = ^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
+sanic_use_middleware(^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
     if (strcmp(req->path, "/foobar") == 0) {
       res->status = 300;
       return ACTION_STOP;
     }
     return ACTION_PASS;
-  }
 });
 ```
