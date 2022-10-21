@@ -3,8 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <gc.h>
-#include "lib/include/log.h"
-#include "lib/include/middleware.h"
+#include <sanic.h>
 
 enum sanic_middleware_action http_version_filter(struct sanic_http_request *req, struct sanic_http_response *res) {
   char version[4];

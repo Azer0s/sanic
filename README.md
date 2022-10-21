@@ -9,6 +9,9 @@ Sanic is a simple, small, express-ish HTTP framework built in C.
 Originally, I built sanic with clang blocks in mind. So they're supported out of the box.
 
 ```c
+#include <gc.h>
+#include <sanic.h>
+
 GC_init();
 sanic_log_level = LEVEL_INFO;
 

@@ -1,5 +1,5 @@
-#ifndef SANIC_MAIN_SANIC_ASCII_H
-#define SANIC_MAIN_SANIC_ASCII_H
+#ifndef SANIC_SANIC_ASCII_H
+#define SANIC_SANIC_ASCII_H
 
 #define sanic_ascii_logo \
 "\n                .:^^~^^::.                        \n" \
@@ -22,4 +22,4 @@
 "     ^~~~~~!^                     .::::::.        \n" \
 "       ..:.                                       \n\n"
 
-#endif //SANIC_MAIN_SANIC_ASCII_H
+#endif //SANIC_SANIC_ASCII_H
