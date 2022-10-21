@@ -8,6 +8,7 @@
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_MAGENTA    "\x1b[35m"
 #define ANSI_COLOR_GRAY    "\x1b[37m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
@@ -18,6 +19,7 @@
 #endif
 
 enum sanic_log_level_enum {
+    LEVEL_DEBUG,
     LEVEL_TRACE,
     LEVEL_INFO,
     LEVEL_WARN,
@@ -40,8 +42,12 @@ strftime(buff, sizeof(buff), "%Y-%m-%d %H:%M:%S", &tm_now) ;
 
 #define sanic_log_fmt(str, level_str, color, ...) \
 ANSI_COLOR_GRAY "%s " color "[" level_str "]" ANSI_COLOR_RESET \
-ANSI_COLOR_GRAY " %s:%d " ANSI_COLOR_RESET        \
+ANSI_COLOR_GRAY " %s:%d \t" ANSI_COLOR_RESET        \
 str "\n", buff, __FILENAME__, __LINE__, __VA_ARGS__
+
+#define sanic_fmt_log_debug(str, ...) sanic_if_log_level(LEVEL_DEBUG, sanic_get_time_to_buff \
+printf(sanic_log_fmt(str, "DEBUG", ANSI_COLOR_MAGENTA, __VA_ARGS__)))
+#define sanic_log_debug(str) sanic_fmt_log_debug(str, NULL)
 
 #define sanic_fmt_log_trace(str, ...) sanic_if_log_level(LEVEL_TRACE, sanic_get_time_to_buff \
 printf(sanic_log_fmt(str, "TRACE", ANSI_COLOR_CYAN, __VA_ARGS__)))

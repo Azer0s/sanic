@@ -8,6 +8,7 @@ struct sanic_http_request {
     __attribute__((unused)) enum sanic_http_method method;
     char *path;
     char *version;
+    char *req_id;
     struct sanic_http_header *headers;
     int conn_fd;
 };
