@@ -1,10 +1,10 @@
 #define DEFINE_MIDDLEWARES
 
 #include <string.h>
-#include <stdlib.h>
-#include "middleware.h"
-#include "http_response.h"
-#include "http_request.h"
+#include "include/middleware.h"
+#include "include/http_response.h"
+#include "include/http_request.h"
+#include <gc.h>
 
 void sanic_use_middleware(
 #ifdef USE_CLANG_BLOCKS
@@ -18,7 +18,7 @@ void sanic_use_middleware(
     current = &(*current)->next;
   }
 
-  *current = malloc(sizeof(struct sanic_middleware));
+  *current = GC_malloc(sizeof(struct sanic_middleware));
   (*current)->callback = callback;
   (*current)->next = NULL;
 }

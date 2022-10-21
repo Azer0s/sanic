@@ -1,0 +1,3 @@
+[submodule "ext/bdwgc"]
+	path = ext/bdwgc
+	url = https://github.com/ivmai/bdwgc.git

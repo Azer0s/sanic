@@ -7,19 +7,20 @@ Sanic is a simple, small, express-ish HTTP framework built in C.
 Originally, I built sanic with clang blocks in mind. So they're supported out of the box.
 
 ```c
+GC_init();
 sanic_log_level = LEVEL_INFO;
 
 sanic_http_on_get("/", ^void(struct sanic_http_request *req) {
   const char *html = "<h1>Hello, World!</h1>";
-  //res->response_body is always pre-allocated with size 1
-  res->response_body = realloc(res->response_body, strlen(html));
+  //sanic integrates with the Boehm GC to automatically deallocate returned data
+  res->response_body = GC_malloc_atomic(strlen(html));
   strcpy(res->response_body, html);
 });
 
 sanic_http_on_get("/people/{:name}", ^void(struct sanic_http_request *req) {
   char *name = sanic_get_params_value(req, "name");
   char *html_template = "<h1>Hello, %s!</h1>";
-  res->response_body = realloc(res->response_body, strlen(html_template) + strlen(name) - 2);
+  res->response_body = GC_malloc_atomic(strlen(html_template) + strlen(name) - 2);
   sprintf(res->response_body, html_template, name);
 });
 
@@ -32,6 +33,8 @@ A less elegant solution is to just pass handler functions as callbacks. With gcc
 although I haven't found out how to make cmake understand that.
 
 ```c
+GC_init();
+
 sanic_http_on_get("/", handle_index);
 sanic_http_on_get("/people/{:name}", handle_get_person);
 

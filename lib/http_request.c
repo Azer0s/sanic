@@ -4,14 +4,15 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <ctype.h>
-#include "http_request.h"
+#include "include/http_request.h"
+#include <gc.h>
 
 void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n) {
   int i = 0;
   while (tmp[i] != ' ') {
     ++i;
   }
-  char *method = malloc(i);
+  char *method = GC_malloc_atomic(i);
   strncpy(method, tmp, i);
 
   for (int j = 0; method[j]; j++) {
@@ -42,7 +43,7 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
   while (tmp[i] != ' ') {
     ++i;
   }
-  char *path = malloc((i - from) + 1);
+  char *path = GC_malloc_atomic((i - from) + 1);
   bzero(path, (i + from) + 1);
   strncpy(path, tmp + from, i - from);
 
@@ -51,14 +52,14 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
   if (i <= n) {
     i++;
     ssize_t to = n - 2;
-    char *version = malloc((to - i) + 1);
+    char *version = GC_malloc_atomic((to - i) + 1);
     bzero(version, (to - i) + 1);
     strncpy(version, tmp + i, to - i);
 
     request->version = version;
   }
 
-  free(method);
+  GC_free(method);
 }
 
 void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t n) {
@@ -69,14 +70,14 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t
     ++i;
   }
   i--;
-  char *key = malloc(i + 1);
+  char *key = GC_malloc_atomic(i + 1);
   bzero(key, i + 1);
   strncpy(key, tmp, i);
 
   i += 2; //skip ': '
 
   ssize_t to = n - 2;
-  char *value = malloc((to - i) + 1);
+  char *value = GC_malloc_atomic((to - i) + 1);
   bzero(value, (to - i) + 1);
   strncpy(value, tmp + i, to - i);
 
@@ -85,7 +86,7 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t
     current = &(*current)->next;
   }
 
-  *current = malloc(sizeof(struct sanic_http_header));
+  *current = GC_malloc(sizeof(struct sanic_http_header));
   (*current)->key = key;
   (*current)->value = value;
   (*current)->next = NULL;
@@ -102,7 +103,7 @@ struct sanic_http_request *sanic_read_request(int fd) {
   }
 
   size_t size = 1;
-  char *block = malloc(sizeof(char) * size);
+  char *block = GC_malloc_atomic(sizeof(char) * size);
   *block = '\0';
 
   char *tmp = malloc(sizeof(char) * size);
@@ -115,7 +116,7 @@ struct sanic_http_request *sanic_read_request(int fd) {
       HEADER,
   } mode = PATH;
 
-  struct sanic_http_request *request = malloc(sizeof(struct sanic_http_request));
+  struct sanic_http_request *request = GC_malloc(sizeof(struct sanic_http_request));
   request->headers = NULL;
 
   ssize_t n;
@@ -123,7 +124,7 @@ struct sanic_http_request *sanic_read_request(int fd) {
     if (strcmp(tmp, "\r\n") == 0) {
       break;
     }
-    block = realloc(block, size + old_size);
+    block = GC_realloc(block, size + old_size);
     old_size += size;
     strcat(block, tmp);
 
@@ -143,24 +144,7 @@ struct sanic_http_request *sanic_read_request(int fd) {
   }
 
   free(tmp);
-
   return request;
-}
-
-void sanic_destroy_request(struct sanic_http_request *request) {
-  free(request->path);
-  free(request->version);
-
-  struct sanic_http_header **current = &request->headers;
-  while (*current != NULL) {
-    struct sanic_http_header *old = *current;
-    current = &(*current)->next;
-    free(old->key);
-    free(old->value);
-    free(old);
-  }
-
-  free(request);
 }
 
 char *sanic_get_params_value(struct sanic_http_request *request, const char *key) {

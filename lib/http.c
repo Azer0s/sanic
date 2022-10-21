@@ -1,15 +1,16 @@
 #define DEFINE_LOG_LEVEL
 
-#include "http.h"
-#include "http_request.h"
-#include "http_response.h"
-#include "log.h"
-#include "middleware.h"
+#include "include/http.h"
+#include "include/http_request.h"
+#include "include/http_response.h"
+#include "include/log.h"
+#include "include/middleware.h"
+#include <stdlib.h>
+#include "../ext/bdwgc/include/gc/gc.h"
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -40,9 +41,9 @@ void insert_route(struct sanic_route route) {
       str_count = 0;
       parts_count++;
 
-      char *p = malloc(strlen(buf));
+      char *p = GC_malloc_atomic(strlen(buf));
       strcpy(p, buf);
-      parts = realloc(parts, parts_count * sizeof(char *));
+      parts = GC_realloc(parts, parts_count * sizeof(char *));
       parts[parts_count - 1] = p;
 
       bzero(buf, 1000);
@@ -53,7 +54,7 @@ void insert_route(struct sanic_route route) {
     i++;
   } while (i <= route_path_len);
 
-  *current = malloc(sizeof(struct sanic_route));
+  *current = GC_malloc(sizeof(struct sanic_route));
   (*current)->path = route.path;
   (*current)->callback = route.callback;
   (*current)->next = NULL;
@@ -104,10 +105,7 @@ void finish_request(struct sanic_http_request *req, struct sanic_http_response *
     sanic_fmt_log_warn("failed to close connection to %s", addr_str)
   }
 
-  sanic_destroy_request(req);
-
-  free(res->response_body);
-  free(res);
+  GC_gcollect();
 }
 
 int sanic_http_serve(uint16_t port) {
@@ -155,11 +153,9 @@ int sanic_http_serve(uint16_t port) {
     struct sanic_http_request *request = sanic_read_request(conn_fd);
     request->conn_fd = conn_fd;
 
-    struct sanic_http_response *response = malloc(sizeof(struct sanic_http_response));
+    struct sanic_http_response *response = GC_malloc(sizeof(struct sanic_http_response));
     response->headers = NULL;
-    response->response_body = malloc(1);
     response->status = -1;
-    bzero(response->response_body, 1);
 
     sanic_fmt_log_trace("processing middleware for %s", addr_str)
 
