@@ -36,7 +36,7 @@ time_t now = time(NULL);       \
 struct tm tm_now ;             \
 localtime_r(&now, &tm_now);    \
 char buff[100];                \
-strftime(buff, sizeof(buff), "%Y-%m-%d %H:%M", &tm_now) ;
+strftime(buff, sizeof(buff), "%Y-%m-%d %H:%M:%S", &tm_now) ;
 
 #define sanic_log_fmt(str, level_str, color, ...) \
 ANSI_COLOR_GRAY "%s " color "[" level_str "]" ANSI_COLOR_RESET \
