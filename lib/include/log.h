@@ -51,7 +51,7 @@ printf(sanic_log_fmt(str, "DEBUG", ANSI_COLOR_MAGENTA, __VA_ARGS__)))
 #define sanic_fmt_log_debug_req(req, str, ...) sanic_if_log_level(LEVEL_DEBUG, sanic_get_time_to_buff \
 char __str_buff[500]; \
 sprintf(__str_buff, str, __VA_ARGS__);\
-printf(sanic_log_fmt("%-50s req_id=%s fd=%d", "DEBUG", ANSI_COLOR_CYAN, __str_buff, (req)->req_id, (req)->conn_fd)))
+printf(sanic_log_fmt("%-50s req_id=%s fd=%d", "DEBUG", ANSI_COLOR_MAGENTA, __str_buff, (req)->req_id, (req)->conn_fd)))
 
 #define sanic_fmt_log_trace(str, ...) sanic_if_log_level(LEVEL_TRACE, sanic_get_time_to_buff \
 printf(sanic_log_fmt(str, "TRACE", ANSI_COLOR_CYAN, __VA_ARGS__)))
@@ -69,7 +69,7 @@ printf(sanic_log_fmt(str, "INFO", ANSI_COLOR_GREEN, __VA_ARGS__)))
 #define sanic_fmt_log_info_req(req, str, ...) sanic_if_log_level(LEVEL_INFO, sanic_get_time_to_buff \
 char __str_buff[500]; \
 sprintf(__str_buff, str, __VA_ARGS__);\
-printf(sanic_log_fmt("%-50s req_id=%s fd=%d", "INFO", ANSI_COLOR_CYAN, __str_buff, (req)->req_id, (req)->conn_fd)))
+printf(sanic_log_fmt("%-50s req_id=%s fd=%d", "INFO", ANSI_COLOR_GREEN, __str_buff, (req)->req_id, (req)->conn_fd)))
 
 #define sanic_fmt_log_warn(str, ...) sanic_if_log_level(LEVEL_WARN, sanic_get_time_to_buff \
 printf(sanic_log_fmt(str, "WARN", ANSI_COLOR_YELLOW, __VA_ARGS__)))
