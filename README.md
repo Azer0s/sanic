@@ -1,3 +1,5 @@
+<img src="img/screenshot.png" alt="sanic terminal screenshot">
+
 ## sanic - Gotta go fast.
 
 Sanic is a simple, small, express-ish HTTP framework built in C.

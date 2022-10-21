@@ -16,6 +16,7 @@
 #include <string.h>
 #include <errno.h>
 #include <uuid/uuid.h>
+#include "include/sanic_ascii.h"
 
 enum sanic_log_level_enum sanic_log_level;
 
@@ -112,7 +113,7 @@ void finish_request(struct sanic_http_request *req, struct sanic_http_response *
   fflush(conn_file);
 
   if (close(req->conn_fd) == 0) {
-    sanic_fmt_log_debug("closed connection to %s\t\t\treq_id=%s fd=%d", addr_str, req->req_id, req->conn_fd)
+    sanic_fmt_log_debug_req(req, "closed connection to %s", addr_str)
   } else {
     sanic_fmt_log_warn("failed to close connection to %s", addr_str)
   }
@@ -128,6 +129,9 @@ void finish_request(struct sanic_http_request *req, struct sanic_http_response *
 int sanic_http_serve(uint16_t port) {
   signal(SIGTERM, sig_handler);
   signal(SIGKILL, sig_handler);
+  signal(SIGINT, sig_handler);
+
+  printf(sanic_ascii_logo);
 
   sanic_log_trace("initializing web server")
 
@@ -170,7 +174,11 @@ int sanic_http_serve(uint16_t port) {
     uuid_generate(req_id_struct);
     uuid_unparse_lower(req_id_struct, req_id);
 
-    sanic_fmt_log_debug("accepted new connection\t\t\t\t\treq_id=%s fd=%d", req_id, conn_fd)
+    struct sanic_http_request tmp_request;
+    tmp_request.req_id = req_id;
+    tmp_request.conn_fd = conn_fd;
+
+    sanic_log_trace_req(&tmp_request, "accepted new connection")
     if (conn_fd < 0) {
       sanic_log_warn("server accept failed")
       continue;
@@ -178,7 +186,7 @@ int sanic_http_serve(uint16_t port) {
 
     char addr_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(conn_addr.sin_addr), addr_str, INET_ADDRSTRLEN);
-    sanic_fmt_log_info("serving %s\t\t\t\t\t\treq_id=%s", addr_str, req_id)
+    sanic_fmt_log_info_req(&tmp_request, "serving %s", addr_str)
 
     struct sanic_http_request *request = sanic_read_request(conn_fd);
     request->conn_fd = conn_fd;
@@ -188,7 +196,7 @@ int sanic_http_serve(uint16_t port) {
     response->headers = NULL;
     response->status = -1;
 
-    sanic_fmt_log_trace("processing middleware for %s\t\treq_id=%s", addr_str, request->req_id)
+    sanic_fmt_log_trace_req(request, "processing middleware for %s", addr_str)
 
     struct sanic_middleware **current_middleware = &middlewares;
     while (*current_middleware != NULL) {
@@ -226,7 +234,7 @@ int sanic_http_serve(uint16_t port) {
       continue;
     }
 
-    sanic_fmt_log_trace("handling request for route %s\t\t\treq_id=%s", request->path, request->req_id)
+    sanic_fmt_log_trace_req(request, "handling request for route %s", request->path)
     response->status = 200;
     (*current_route)->callback(request, response);
     finish_request(request, response, addr_str);
