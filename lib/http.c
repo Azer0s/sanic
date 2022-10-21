@@ -103,7 +103,8 @@ void finish_request(struct sanic_http_request *req, struct sanic_http_response *
   int status = res->status == -1 ? 404 : res->status;
 
   if (res->response_body != NULL) {
-    fprintf(conn_file, "HTTP/1.1 %d %s\nConnection: Closed\n\n%s", status, sanic_get_status_text(status), res->response_body);
+    fprintf(conn_file, "HTTP/1.1 %d %s\nConnection: Closed\n\n%s", status, sanic_get_status_text(status),
+            res->response_body);
   } else {
     fprintf(conn_file, "HTTP/1.1 %d %s\nConnection: Closed\n\n", status, sanic_get_status_text(status));
   }

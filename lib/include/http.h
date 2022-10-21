@@ -25,7 +25,10 @@ struct sanic_route {
 #ifdef USE_CLANG_BLOCKS
 void sanic_http_on_get(const char *route, void (^callback)(struct sanic_http_request *req, struct sanic_http_response *res));
 #else
-void sanic_http_on_get(const char *route, void (*callback)(struct sanic_http_request *req, struct sanic_http_response *res));
+
+void
+sanic_http_on_get(const char *route, void (*callback)(struct sanic_http_request *req, struct sanic_http_response *res));
+
 #endif
 
 int sanic_http_serve(uint16_t port);
