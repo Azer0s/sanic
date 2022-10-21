@@ -41,9 +41,9 @@ void insert_route(struct sanic_route route) {
       str_count = 0;
       parts_count++;
 
-      char *p = GC_malloc_atomic(strlen(buf));
+      char *p = GC_MALLOC_ATOMIC(strlen(buf));
       strcpy(p, buf);
-      parts = GC_realloc(parts, parts_count * sizeof(char *));
+      parts = GC_REALLOC(parts, parts_count * sizeof(char *));
       parts[parts_count - 1] = p;
 
       bzero(buf, 1000);
@@ -54,7 +54,7 @@ void insert_route(struct sanic_route route) {
     i++;
   } while (i <= route_path_len);
 
-  *current = GC_malloc(sizeof(struct sanic_route));
+  *current = GC_MALLOC(sizeof(struct sanic_route));
   (*current)->path = route.path;
   (*current)->callback = route.callback;
   (*current)->next = NULL;
@@ -106,6 +106,11 @@ void finish_request(struct sanic_http_request *req, struct sanic_http_response *
   }
 
   GC_gcollect();
+
+#if GC_DEBUG
+  printf("%zu\n", GC_get_heap_size());
+  printf("%zu\n", GC_get_free_bytes());
+#endif
 }
 
 int sanic_http_serve(uint16_t port) {
@@ -153,7 +158,7 @@ int sanic_http_serve(uint16_t port) {
     struct sanic_http_request *request = sanic_read_request(conn_fd);
     request->conn_fd = conn_fd;
 
-    struct sanic_http_response *response = GC_malloc(sizeof(struct sanic_http_response));
+    struct sanic_http_response *response = GC_MALLOC(sizeof(struct sanic_http_response));
     response->headers = NULL;
     response->status = -1;
 

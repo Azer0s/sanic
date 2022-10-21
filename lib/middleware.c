@@ -18,7 +18,7 @@ void sanic_use_middleware(
     current = &(*current)->next;
   }
 
-  *current = GC_malloc(sizeof(struct sanic_middleware));
+  *current = GC_MALLOC(sizeof(struct sanic_middleware));
   (*current)->callback = callback;
   (*current)->next = NULL;
 }
