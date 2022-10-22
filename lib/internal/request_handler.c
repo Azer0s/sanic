@@ -82,6 +82,10 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
       break;
     }
 
+    if ((*current_route)->parts_count != request->path_len) {
+      continue;
+    }
+
     //TODO: match with route parts
     if (strcmp(request->path, (*current_route)->path) == 0) {
       break;
