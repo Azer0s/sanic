@@ -10,8 +10,6 @@ add_subdirectory(../ext/bdwgc "${CMAKE_CURRENT_BINARY_DIR}/ext/bdwgc")
 include_directories(../ext/bdwgc/include)
 
 add_compile_options(-Wno-string-plus-int)
-add_compile_options(-Wno-attributes)
-add_compile_options(-Wno-stringop-overflow)
 
 add_library(sanic STATIC
         http_header.c
