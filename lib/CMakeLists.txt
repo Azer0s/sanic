@@ -11,11 +11,6 @@ include_directories(../ext/bdwgc/include)
 
 add_definitions(-Wno-string-plus-int)
 add_definitions(-Wno-format-extra-args)
-add_definitions(-Wno-attributes)
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_definitions(-Wno-stringop-overflow)
-endif ()
 
 add_library(sanic STATIC
         http_header.c
