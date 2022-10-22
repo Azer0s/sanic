@@ -10,14 +10,18 @@ add_subdirectory(../ext/bdwgc "${CMAKE_CURRENT_BINARY_DIR}/ext/bdwgc")
 include_directories(../ext/bdwgc/include)
 
 add_compile_options(-Wno-string-plus-int)
+add_compile_options(-Wno-attributes)
+add_compile_options(-Wno-stringop-overflow=)
 
 add_library(sanic STATIC
         http_header.c
         http_request.c
-        internal/http_util.c
         middleware.c
-        internal/request_handler.c
         route.c
+        server.c
+
+        internal/http_util.c
+        internal/request_handler.c
         internal/request_util.c
-        server.c include/internal/http_util.h internal/middleware_handler.c include/internal/middleware_handler.h)
+        internal/middleware_handler.c)
 target_link_libraries(sanic PUBLIC gc)

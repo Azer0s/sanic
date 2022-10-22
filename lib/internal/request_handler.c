@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "gc.h"
 #include <unistd.h>
-#include <strings.h>
+#include <string.h>
 #include <uuid/uuid.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>

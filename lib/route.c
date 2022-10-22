@@ -1,6 +1,6 @@
 #define DEFINE_ROUTES
 
-#include <strings.h>
+#include <string.h>
 #include <gc.h>
 
 #include "include/route.h"
