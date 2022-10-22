@@ -9,6 +9,4 @@ struct sanic_http_response {
     __attribute__((unused)) struct sanic_http_header *headers;
 };
 
-const char *sanic_get_status_text(int status);
-
 #endif //SANIC_HTTP_RESPONSE_H

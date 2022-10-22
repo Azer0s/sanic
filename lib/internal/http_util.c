@@ -1,4 +1,4 @@
-#include "include/http_response.h"
+#include "../include/internal/http_util.h"
 
 const char *sanic_get_status_text(int status) {
   switch (status) {

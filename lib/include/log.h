@@ -33,47 +33,79 @@ extern enum sanic_log_level_enum sanic_log_level;
 #endif
 
 #define sanic_if_log_level(level, action) if(sanic_log_level <= (level)) { action; }
-#define sanic_get_time_to_buff \
+#define sanic_get_time_to_buff   \
 time_t __now = time(NULL);       \
 struct tm __tm_now ;             \
-localtime_r(&__now, &__tm_now);    \
+localtime_r(&__now, &__tm_now);  \
 char __buff[100];                \
 strftime(__buff, sizeof(__buff), "%Y-%m-%d %H:%M:%S", &__tm_now) ;
 
-#define sanic_log_fmt(str, level_str, color, ...) \
-ANSI_COLOR_GRAY "%s " color "[" level_str "]\t" ANSI_COLOR_RESET \
-ANSI_COLOR_GRAY "%s:%d\t" ANSI_COLOR_RESET        \
-str "\n", __buff, FILENAME, __LINE__, __VA_ARGS__
+#define sanic_log_fmt(str, level_str, color, ...) sanic_log_fmt_no_nl(str "\n", level_str, color, __VA_ARGS__)
+
+#if SANIC_LOG_DEBUG
+  #if !SANIC_LOG_TIME
+#define sanic_log_fmt_no_nl(str, level_str, color, ...) \
+color "%-8s" ANSI_COLOR_RESET \
+ANSI_COLOR_GRAY "%s:%d " ANSI_COLOR_RESET        \
+str, "[" level_str "]", FILENAME, __LINE__, __VA_ARGS__
+
+#define sanic_fmt_log_req(req, str, level, level_str, color, ...) sanic_if_log_level(level, \
+char __str_buff[500]; \
+sprintf(__str_buff, sanic_log_fmt_no_nl(str, level_str, color, __VA_ARGS__));\
+printf("%-95s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
+  #else
+#define sanic_log_fmt_no_nl(str, level_str, color, ...) \
+ANSI_COLOR_GRAY "%s " color "%-8s" ANSI_COLOR_RESET     \
+ANSI_COLOR_GRAY "%s:%d " ANSI_COLOR_RESET               \
+str, __buff, "[" level_str "]", FILENAME, __LINE__, __VA_ARGS__
+
+#define sanic_fmt_log_req(req, str, level, level_str, color, ...) sanic_if_log_level(level, sanic_get_time_to_buff \
+char __str_buff[500];                                                                                              \
+sprintf(__str_buff, sanic_log_fmt_no_nl(str, level_str, color, __VA_ARGS__));                                      \
+printf("%-135s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
+  #endif
+#else
+  #if !SANIC_LOG_TIME
+#define sanic_log_fmt_no_nl(str, level_str, color, ...) \
+color "%-8s" ANSI_COLOR_RESET                           \
+str, "[" level_str "]", __VA_ARGS__
+
+#define sanic_fmt_log_req(req, str, level, level_str, color, ...) sanic_if_log_level(level, \
+char __str_buff[500];                                                                       \
+sprintf(__str_buff, sanic_log_fmt_no_nl(str, level_str, color, __VA_ARGS__));               \
+printf("%-70s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
+  #else
+#define sanic_log_fmt_no_nl(str, level_str, color, ...) \
+ANSI_COLOR_GRAY "%s " color "%-8s" ANSI_COLOR_RESET     \
+str, __buff, "[" level_str "]", __VA_ARGS__
+
+#define sanic_fmt_log_req(req, str, level, level_str, color, ...) sanic_if_log_level(level, sanic_get_time_to_buff \
+char __str_buff[500];                                                                                              \
+sprintf(__str_buff, sanic_log_fmt_no_nl(str, level_str, color, __VA_ARGS__));                                      \
+printf("%-110s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
+  #endif
+#endif
 
 #define sanic_fmt_log_debug(str, ...) sanic_if_log_level(LEVEL_DEBUG, sanic_get_time_to_buff \
 printf(sanic_log_fmt(str, "DEBUG", ANSI_COLOR_MAGENTA, __VA_ARGS__)))
 #define sanic_log_debug(str) sanic_fmt_log_debug(str, NULL)
-#define sanic_fmt_log_debug_req(req, str, ...) sanic_if_log_level(LEVEL_DEBUG, sanic_get_time_to_buff \
-char __str_buff[500]; \
-sprintf(__str_buff, str, __VA_ARGS__);\
-printf(sanic_log_fmt("%-50s req_id=%s fd=%d", "DEBUG", ANSI_COLOR_MAGENTA, __str_buff, (req)->req_id, (req)->conn_fd)))
+#define sanic_fmt_log_debug_req(req, str, ...) sanic_fmt_log_req(req, str, LEVEL_DEBUG, "DEBUG", ANSI_COLOR_MAGENTA, __VA_ARGS__)
 
 #define sanic_fmt_log_trace(str, ...) sanic_if_log_level(LEVEL_TRACE, sanic_get_time_to_buff \
 printf(sanic_log_fmt(str, "TRACE", ANSI_COLOR_CYAN, __VA_ARGS__)))
 #define sanic_log_trace(str) sanic_fmt_log_trace(str, NULL)
-#define sanic_fmt_log_trace_req(req, str, ...) sanic_if_log_level(LEVEL_TRACE, sanic_get_time_to_buff \
-char __str_buff[500]; \
-sprintf(__str_buff, str, __VA_ARGS__);\
-printf(sanic_log_fmt("%-50s req_id=%s fd=%d", "TRACE", ANSI_COLOR_CYAN, __str_buff, (req)->req_id, (req)->conn_fd)))
-#define sanic_log_trace_req(req, str) sanic_if_log_level(LEVEL_TRACE, sanic_get_time_to_buff \
-printf(sanic_log_fmt("%-50s req_id=%s fd=%d", "TRACE", ANSI_COLOR_CYAN, str, (req)->req_id, (req)->conn_fd)))
+#define sanic_fmt_log_trace_req(req, str, ...) sanic_fmt_log_req(req, str, LEVEL_TRACE, "TRACE", ANSI_COLOR_CYAN, __VA_ARGS__)
+#define sanic_log_trace_req(req, str) sanic_fmt_log_trace_req(req, str, NULL)
 
 #define sanic_fmt_log_info(str, ...) sanic_if_log_level(LEVEL_INFO, sanic_get_time_to_buff \
 printf(sanic_log_fmt(str, "INFO", ANSI_COLOR_GREEN, __VA_ARGS__)))
 #define sanic_log_info(str) sanic_fmt_log_info(str, NULL)
-#define sanic_fmt_log_info_req(req, str, ...) sanic_if_log_level(LEVEL_INFO, sanic_get_time_to_buff \
-char __str_buff[500]; \
-sprintf(__str_buff, str, __VA_ARGS__);\
-printf(sanic_log_fmt("%-50s req_id=%s fd=%d", "INFO", ANSI_COLOR_GREEN, __str_buff, (req)->req_id, (req)->conn_fd)))
+#define sanic_fmt_log_info_req(req, str, ...) sanic_fmt_log_req(req, str, LEVEL_INFO, "INFO", ANSI_COLOR_GREEN, __VA_ARGS__)
 
 #define sanic_fmt_log_warn(str, ...) sanic_if_log_level(LEVEL_WARN, sanic_get_time_to_buff \
 printf(sanic_log_fmt(str, "WARN", ANSI_COLOR_YELLOW, __VA_ARGS__)))
 #define sanic_log_warn(str) sanic_fmt_log_warn(str, NULL)
+#define sanic_fmt_log_warn_req(req, str, ...) sanic_fmt_log_req(req, str, LEVEL_WARN, "WARN", ANSI_COLOR_YELLOW, __VA_ARGS__)
 
 #define sanic_fmt_log_error(str, ...) sanic_if_log_level(LEVEL_ERROR, sanic_get_time_to_buff \
 fprintf(stderr, sanic_log_fmt(str, "ERROR", ANSI_COLOR_RED, __VA_ARGS__)))

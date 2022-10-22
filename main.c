@@ -1,4 +1,3 @@
-#include "lib/include/http.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -26,7 +25,7 @@ enum sanic_middleware_action http_version_filter(struct sanic_http_request *req,
   return ACTION_PASS;
 }
 
-#ifdef USE_CLANG_BLOCKS
+#ifdef SANIC_USE_CLANG_BLOCKS
 
 int main() {
   GC_init();

@@ -12,7 +12,7 @@ enum sanic_middleware_action {
 struct sanic_middleware;
 
 struct sanic_middleware {
-#ifdef USE_CLANG_BLOCKS
+#ifdef SANIC_USE_CLANG_BLOCKS
     enum sanic_middleware_action (^callback)(struct sanic_http_request *, struct sanic_http_response *);
 #else
     enum sanic_middleware_action (*callback)(struct sanic_http_request *, struct sanic_http_response *);
@@ -28,7 +28,7 @@ extern struct sanic_middleware *middlewares;
 #endif
 
 void sanic_use_middleware(
-#ifdef USE_CLANG_BLOCKS
+#ifdef SANIC_USE_CLANG_BLOCKS
         enum sanic_middleware_action (^callback)(struct sanic_http_request *, struct sanic_http_response *)
 #else
         enum sanic_middleware_action (*callback)(struct sanic_http_request *, struct sanic_http_response *)
