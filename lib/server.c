@@ -28,7 +28,7 @@ void sanic_shutdown_server() {
   stop = 1;
 }
 
-void sig_handler(__attribute__((unused)) int signum) {
+void sig_handler(int signum) {
   sanic_log_debug("received interrupt")
   sanic_shutdown_server();
   exit(0);

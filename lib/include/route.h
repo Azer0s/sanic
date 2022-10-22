@@ -26,8 +26,8 @@ struct sanic_route {
 #endif
 
     struct sanic_route *next;
-    __attribute__((unused)) struct sanic_route_part *parts;
-    __attribute__((unused)) size_t parts_count;
+    struct sanic_route_part *parts;
+    size_t parts_count;
 };
 
 #ifdef DEFINE_ROUTES

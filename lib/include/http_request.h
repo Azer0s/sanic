@@ -5,7 +5,7 @@
 #include "http_method.h"
 
 struct sanic_http_request {
-    __attribute__((unused)) enum sanic_http_method method;
+    enum sanic_http_method method;
     char *path;
     char *version;
     char *req_id;
