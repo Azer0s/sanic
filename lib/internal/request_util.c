@@ -151,6 +151,7 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t
 
 struct sanic_http_request *sanic_read_request(int fd) {
   //TODO: Add error handling for invalid HTTP requests
+  //TODO: Add cookie support
 
   FILE *conn_file;
 
