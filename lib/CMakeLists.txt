@@ -9,7 +9,13 @@ add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 add_subdirectory(../ext/bdwgc "${CMAKE_CURRENT_BINARY_DIR}/ext/bdwgc")
 include_directories(../ext/bdwgc/include)
 
-add_compile_options(-Wno-string-plus-int)
+add_definitions(-Wno-string-plus-int)
+add_definitions(-Wno-format-extra-args)
+add_definitions(-Wno-attributes)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_definitions(-Wno-stringop-overflow)
+endif ()
 
 add_library(sanic STATIC
         http_header.c
