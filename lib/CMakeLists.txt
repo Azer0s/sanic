@@ -17,14 +17,15 @@ add_definitions(-Wno-format-extra-args)
 
 add_library(sanic STATIC
         http_header.c
+        http_method.c
         http_request.c
-        http_param.c
         middleware.c
         route.c
         sanic.c
         server.c
 
         internal/http_util.c
+        internal/http_param.c
         internal/request_handler.c
         internal/request_util.c
         internal/middleware_handler.c)

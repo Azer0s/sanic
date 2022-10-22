@@ -71,8 +71,6 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
     return;
   }
 
-  //TODO: handle path params
-  //TODO: handle query params
   //TODO: add request validation
   //TODO: add options for auto deserialization
 
@@ -82,25 +80,40 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
       break;
     }
 
-    if ((*current_route)->parts_count != request->path_len) {
-      continue;
+    if ((*current_route)->parts_count != request->path_len || (*current_route)->method != request->method) {
+      goto skip_route;
     }
 
-    //TODO: match with route parts
-    if (strcmp(request->path, (*current_route)->path) == 0) {
-      break;
+    for (int i = 0; i < request->path_len; ++i) {
+      if((*current_route)->parts[i].type == TYPE_FIXED) {
+        if (strcmp((*current_route)->parts[i].value, request->path_parts[i]) != 0) {
+          goto skip_route;
+        }
+      }
     }
+    goto route_found;
 
+    skip_route:
     current_route = &(*current_route)->next;
   }
+  route_found:
 
   if (*current_route == NULL) {
-    sanic_fmt_log_warn_req(request, "no route for %s found", request->path)
+    sanic_fmt_log_warn_req(request, "no route for %s %s found", sanic_http_method_to_str(request->method), request->path)
     sanic_finish_request(request, response, addr_str);
     return;
   }
 
-  sanic_fmt_log_trace_req(request, "handling request for route %s", request->path)
+  for (int i = 0; i < request->path_len; ++i) {
+    if((*current_route)->parts[i].type == TYPE_PATH_PARAM) {
+      struct sanic_http_param *path_param = GC_MALLOC(sizeof(struct sanic_http_param));
+      path_param->key = GC_STRDUP((*current_route)->parts[i].value);
+      path_param->value = GC_STRDUP(request->path_parts[i]);
+      sanic_http_param_insert(&request->path_param, path_param);
+    }
+  }
+
+  sanic_fmt_log_trace_req(request, "handling request for route %s %s", sanic_http_method_to_str(request->method), request->path)
   response->status = 200;
   (*current_route)->callback(request, response);
   sanic_finish_request(request, response, addr_str);

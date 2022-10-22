@@ -21,7 +21,7 @@ sanic_http_on_get("/", ^void(struct sanic_http_request *req) {
 });
 
 sanic_http_on_get("/people/{:name}", ^void(struct sanic_http_request *req) {
-  char *name = sanic_get_params_value(req, "name");
+  char *name = sanic_get_path_params_value(req, "name");
   char *html_template = "<h1>Hello, %s!</h1>";
   res->response_body = GC_MALLOC_ATOMIC(strlen(html_template) + strlen(name) - 1);
   bzero(res->response_body, strlen(html_template) + strlen(name) - 1);

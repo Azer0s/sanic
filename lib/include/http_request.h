@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include "http_header.h"
 #include "http_method.h"
-#include "http_param.h"
+#include "internal/http_param.h"
 
 struct sanic_http_request {
     enum sanic_http_method method;
@@ -19,6 +19,7 @@ struct sanic_http_request {
     int conn_fd;
 };
 
-char *sanic_get_params_value(struct sanic_http_request *request, const char *key);
+char *sanic_get_path_params_value(struct sanic_http_request *request, char *key);
+char *sanic_get_query_params_value(struct sanic_http_request *request, char *key);
 
 #endif //SANIC_HTTP_REQUEST_H

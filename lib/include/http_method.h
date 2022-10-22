@@ -13,4 +13,6 @@ enum sanic_http_method {
     METHOD_PATCH
 };
 
+const char *sanic_http_method_to_str(enum sanic_http_method method);
+
 #endif //SANIC_HTTP_METHOD_H

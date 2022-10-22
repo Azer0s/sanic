@@ -27,7 +27,7 @@ struct sanic_route {
 
     struct sanic_route_part *parts;
     size_t parts_count;
-
+    enum sanic_http_method method;
     struct sanic_route *next;
 };
 
@@ -38,6 +38,16 @@ extern struct sanic_route *routes;
 #endif
 
 void sanic_insert_route(struct sanic_route route);
+
+//TODO: add other methods
+
+void sanic_http_on(enum sanic_http_method method, const char *path,
+#ifdef SANIC_USE_CLANG_BLOCKS
+        void (^callback)(struct sanic_http_request *, struct sanic_http_response *)
+#else
+        void (*callback)(struct sanic_http_request *, struct sanic_http_response *)
+#endif
+);
 
 void sanic_http_on_get(const char *path,
 #ifdef SANIC_USE_CLANG_BLOCKS

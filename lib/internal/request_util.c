@@ -86,6 +86,7 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
       struct sanic_http_param *param = GC_MALLOC(sizeof(struct sanic_http_param));
       param->key = GC_STRDUP(k);
       param->value = GC_STRDUP(v);
+      //TODO: decode query param
 
       sanic_http_param_insert(&request->query_param, param);
     }
@@ -106,6 +107,7 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
     request->path_len++;
     request->path_parts = GC_REALLOC(request->path_parts, request->path_len * sizeof(char*));
     request->path_parts[request->path_len - 1] = GC_STRDUP(path_token);
+    //TODO: decode path param
   }
 
   if (request->path_len == 0) {
