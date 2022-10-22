@@ -46,7 +46,8 @@ int main() {
 
   sanic_http_on_get("/", ^void(struct sanic_http_request *req, struct sanic_http_response *res) {
     const char *html = "<h1>Hello, World!</h1>";
-    res->response_body = GC_malloc_atomic(strlen(html));
+    res->response_body = GC_malloc_atomic(strlen(html)  + 1);
+    bzero(res->response_body, strlen(html)  + 1);
     strcpy(res->response_body, html);
 
     sanic_http_header_insert(&res->headers, &(struct sanic_http_header) {
@@ -69,7 +70,8 @@ int main() {
 
 void handle_index(struct sanic_http_request *req, struct sanic_http_response *res) {
   const char *html = "<h1>Hello, World!</h1>";
-  res->response_body = GC_malloc_atomic(strlen(html));
+  res->response_body = GC_malloc_atomic(strlen(html)  + 1);
+  bzero(res->response_body, strlen(html)  + 1);
   strcpy(res->response_body, html);
 }
 
