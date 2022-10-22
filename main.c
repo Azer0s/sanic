@@ -49,6 +49,11 @@ int main() {
     const char *html = "<h1>Hello, World!</h1>";
     res->response_body = GC_malloc_atomic(strlen(html));
     strcpy(res->response_body, html);
+
+    sanic_http_header_insert(&res->headers, &(struct sanic_http_header) {
+      .key = "Hotel",
+      .value = "Trivago",
+    });
   });
 
   sanic_http_on_get("/people/{:name}", ^void(struct sanic_http_request *req, struct sanic_http_response *res) {

@@ -7,6 +7,7 @@ string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
 add_subdirectory(../ext/bdwgc "${CMAKE_CURRENT_BINARY_DIR}/ext/bdwgc")
-add_library(sanic http.c http_request.c http_response.c middleware.c include/sanic.h)
 include_directories(../ext/bdwgc/include)
-target_link_libraries(sanic gc)
+
+add_library(sanic STATIC http_request.c http_response.c middleware.c http.c include/sanic.h http_header.c)
+target_link_libraries(sanic PUBLIC gc)

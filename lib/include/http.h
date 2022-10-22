@@ -6,6 +6,16 @@
 #include "http_request.h"
 #include "http_response.h"
 
+enum sanic_route_part_type {
+    TYPE_FIXED,
+    TYPE_PATH_PARAM
+};
+
+struct sanic_route_part {
+    enum sanic_route_part_type type;
+    char* value;
+};
+
 struct sanic_route;
 
 struct sanic_route {
@@ -18,7 +28,7 @@ struct sanic_route {
 #endif
 
     struct sanic_route *next;
-    __attribute__((unused)) char **parts;
+    __attribute__((unused)) struct sanic_route_part *parts;
     __attribute__((unused)) size_t parts_count;
 };
 

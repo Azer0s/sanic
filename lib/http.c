@@ -1,12 +1,6 @@
 #define DEFINE_LOG_LEVEL
 
-#include "include/http.h"
-#include "include/http_request.h"
-#include "include/http_response.h"
-#include "include/log.h"
-#include "include/middleware.h"
 #include <stdlib.h>
-#include "../ext/bdwgc/include/gc/gc.h"
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <signal.h>
@@ -16,10 +10,16 @@
 #include <string.h>
 #include <errno.h>
 #include <uuid/uuid.h>
+#include <gc.h>
+
 #include "include/sanic_ascii.h"
+#include "include/http.h"
+#include "include/http_request.h"
+#include "include/http_response.h"
+#include "include/log.h"
+#include "include/middleware.h"
 
 enum sanic_log_level_enum sanic_log_level;
-
 struct sanic_route *routes = NULL;
 
 void insert_route(struct sanic_route route) {
@@ -28,10 +28,8 @@ void insert_route(struct sanic_route route) {
     current = &(*current)->next;
   }
 
-  //TODO: parse route parts and param filter
-
   size_t parts_count = 0;
-  char **parts = NULL;
+  struct sanic_route_part *parts = NULL;
 
   char buf[1000];
   bzero(buf, 1000);
@@ -44,10 +42,23 @@ void insert_route(struct sanic_route route) {
       str_count = 0;
       parts_count++;
 
-      char *p = GC_MALLOC_ATOMIC(strlen(buf));
-      strcpy(p, buf);
-      parts = GC_REALLOC(parts, parts_count * sizeof(char *));
-      parts[parts_count - 1] = p;
+      char *p;
+      enum sanic_route_part_type type;
+
+      if (strncmp(buf, "/{:", 3) == 0 && buf[strlen(buf) - 1] == '}') {
+        p = GC_MALLOC_ATOMIC(strlen(buf) - 3);
+        bzero(p, strlen(buf) - 3);
+        strncpy(p, buf + 3, strlen(buf) - 4);
+        type = TYPE_PATH_PARAM;
+      } else {
+        p = GC_MALLOC_ATOMIC(strlen(buf));
+        strcpy(p, buf);
+        type = TYPE_FIXED;
+      }
+
+      parts = GC_REALLOC(parts, parts_count * sizeof(struct sanic_route_part));
+      parts[parts_count - 1].type = type;
+      parts[parts_count - 1].value = p;
 
       bzero(buf, 1000);
     }
@@ -100,14 +111,26 @@ void sig_handler(__attribute__((unused)) int signum) {
 void finish_request(struct sanic_http_request *req, struct sanic_http_response *res, char *addr_str) {
   FILE *conn_file = fdopen(req->conn_fd, "w+");
 
-  //TODO: handle headers
   int status = res->status == -1 ? 404 : res->status;
+  fprintf(conn_file, "HTTP/1.1 %d %s\n", status, sanic_get_status_text(status));
+
+  struct sanic_http_header closed_header = (struct sanic_http_header) {
+    .key = "Connection",
+    .value = "Closed"
+  };
+
+  sanic_http_header_insert(&res->headers, &closed_header);
+
+  struct sanic_http_header **current = &res->headers;
+  while (*current != NULL) {
+    fprintf(conn_file, "%s: %s\n", (*current)->key, (*current)->value);
+    current = &(*current)->next;
+  }
 
   if (res->response_body != NULL) {
-    fprintf(conn_file, "HTTP/1.1 %d %s\nConnection: Closed\n\n%s", status, sanic_get_status_text(status),
-            res->response_body);
+    fprintf(conn_file, "\n%s", res->response_body);
   } else {
-    fprintf(conn_file, "HTTP/1.1 %d %s\nConnection: Closed\n\n", status, sanic_get_status_text(status));
+    fprintf(conn_file, "\n");
   }
 
   fflush(conn_file);
@@ -221,6 +244,7 @@ int sanic_http_serve(uint16_t port) {
         break;
       }
 
+      //TODO: match with route parts
       if (strcmp(request->path, (*current_route)->path) == 0) {
         break;
       }

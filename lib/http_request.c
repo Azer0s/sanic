@@ -4,8 +4,9 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <ctype.h>
-#include "include/http_request.h"
 #include <gc.h>
+
+#include "include/http_request.h"
 
 void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n) {
   int i = 0;
@@ -81,15 +82,12 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t
   bzero(value, (to - i) + 1);
   strncpy(value, tmp + i, to - i);
 
-  struct sanic_http_header **current = &request->headers;
-  while (*current != NULL) {
-    current = &(*current)->next;
-  }
+  struct sanic_http_header *new = GC_MALLOC(sizeof(struct sanic_http_header));
+  new->key = key;
+  new->value = value;
+  new->next = NULL;
 
-  *current = GC_MALLOC(sizeof(struct sanic_http_header));
-  (*current)->key = key;
-  (*current)->value = value;
-  (*current)->next = NULL;
+  sanic_http_header_insert(&request->headers, new);
 }
 
 struct sanic_http_request *sanic_read_request(int fd) {

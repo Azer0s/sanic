@@ -13,9 +13,9 @@
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 #ifndef SOURCE_PATH_SIZE
-#define __FILENAME__ __FILE__
+#define FILENAME __FILE__
 #else
-#define __FILENAME__ (__FILE__ + SOURCE_PATH_SIZE)
+#define FILENAME (__FILE__ + SOURCE_PATH_SIZE)
 #endif
 
 enum sanic_log_level_enum {
@@ -43,7 +43,7 @@ strftime(__buff, sizeof(__buff), "%Y-%m-%d %H:%M:%S", &__tm_now) ;
 #define sanic_log_fmt(str, level_str, color, ...) \
 ANSI_COLOR_GRAY "%s " color "[" level_str "]\t" ANSI_COLOR_RESET \
 ANSI_COLOR_GRAY "%s:%d\t" ANSI_COLOR_RESET        \
-str "\n", __buff, __FILENAME__, __LINE__, __VA_ARGS__
+str "\n", __buff, FILENAME, __LINE__, __VA_ARGS__
 
 #define sanic_fmt_log_debug(str, ...) sanic_if_log_level(LEVEL_DEBUG, sanic_get_time_to_buff \
 printf(sanic_log_fmt(str, "DEBUG", ANSI_COLOR_MAGENTA, __VA_ARGS__)))
