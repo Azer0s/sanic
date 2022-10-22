@@ -16,16 +16,15 @@ sanic_init();
 sanic_log_level = LEVEL_DEBUG;
 
 sanic_http_on_get("/", ^void(struct sanic_http_request *req) {
-  const char *html = "<h1>Hello, World!</h1>";
   //sanic integrates with the Boehm GC to automatically deallocate returned data
-  res->response_body = GC_malloc_atomic(strlen(html));
-  strcpy(res->response_body, html);
+  res->response_body = GC_STRDUP("<h1>Hello, World!</h1>");
 });
 
 sanic_http_on_get("/people/{:name}", ^void(struct sanic_http_request *req) {
   char *name = sanic_get_params_value(req, "name");
   char *html_template = "<h1>Hello, %s!</h1>";
-  res->response_body = GC_malloc_atomic(strlen(html_template) + strlen(name) - 2);
+  res->response_body = GC_MALLOC_ATOMIC(strlen(html_template) + strlen(name) - 1);
+  bzero(res->response_body, strlen(html_template) + strlen(name) - 1);
   sprintf(res->response_body, html_template, name);
 });
 

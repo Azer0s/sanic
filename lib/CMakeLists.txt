@@ -18,13 +18,15 @@ add_definitions(-Wno-format-extra-args)
 add_library(sanic STATIC
         http_header.c
         http_request.c
+        http_param.c
         middleware.c
         route.c
+        sanic.c
         server.c
 
         internal/http_util.c
         internal/request_handler.c
         internal/request_util.c
-        internal/middleware_handler.c sanic.c)
+        internal/middleware_handler.c)
 target_link_libraries(sanic PUBLIC gc)
 target_link_libraries(sanic PUBLIC uuid4)

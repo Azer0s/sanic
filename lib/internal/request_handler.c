@@ -91,7 +91,7 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
   }
 
   if (*current_route == NULL) {
-    sanic_fmt_log_warn("no route %s found", request->path)
+    sanic_fmt_log_warn_req(request, "no route for %s found", request->path)
     sanic_finish_request(request, response, addr_str);
     return;
   }

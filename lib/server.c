@@ -52,6 +52,11 @@ int sanic_http_serve(uint16_t port) {
   }
   sanic_log_debug("socket successfully created")
 
+  if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
+    sanic_fmt_log_error("socket creation failed: %s", strerror(errno))
+    return 1;
+  }
+
 #if SANIC_SOCKET_NO_LINGER
   struct linger l = {
           .l_onoff = 1,

@@ -44,11 +44,7 @@ int main() {
   });
 
   sanic_http_on_get("/", ^void(struct sanic_http_request *req, struct sanic_http_response *res) {
-    const char *html = "<h1>Hello, World!</h1>";
-    res->response_body = GC_malloc_atomic(strlen(html)  + 1);
-    bzero(res->response_body, strlen(html)  + 1);
-    strcpy(res->response_body, html);
-
+    res->response_body = GC_STRDUP("<h1>Hello, World!</h1>");
     sanic_http_header_insert(&res->headers, &(struct sanic_http_header) {
       .key = "Hotel",
       .value = "Trivago",
@@ -58,7 +54,8 @@ int main() {
   sanic_http_on_get("/people/{:name}", ^void(struct sanic_http_request *req, struct sanic_http_response *res) {
     char *name = sanic_get_params_value(req, "name");
     char *html_template = "<h1>Hello, %s!</h1>";
-    res->response_body = GC_malloc_atomic(strlen(html_template) + strlen(name) - 2);
+    res->response_body = GC_malloc_atomic(strlen(html_template) + strlen(name) - 1);
+    bzero(res->response_body, strlen(html_template) + strlen(name) - 1);
     sprintf(res->response_body, html_template, name);
   });
 
@@ -68,16 +65,14 @@ int main() {
 #else
 
 void handle_index(struct sanic_http_request *req, struct sanic_http_response *res) {
-  const char *html = "<h1>Hello, World!</h1>";
-  res->response_body = GC_malloc_atomic(strlen(html)  + 1);
-  bzero(res->response_body, strlen(html)  + 1);
-  strcpy(res->response_body, html);
+  res->response_body = GC_STRDUP("<h1>Hello, World!</h1>");
 }
 
 void handle_get_person(struct sanic_http_request *req, struct sanic_http_response *res) {
   char *name = sanic_get_params_value(req, "name");
   char *html_template = "<h1>Hello, %s!</h1>";
-  res->response_body = GC_malloc_atomic(strlen(html_template) + strlen(name) - 2);
+  res->response_body = GC_malloc_atomic(strlen(html_template) + strlen(name) - 1);
+  bzero(res->response_body, strlen(html_template) + strlen(name) - 1);
   sprintf(res->response_body, html_template, name);
 }
 

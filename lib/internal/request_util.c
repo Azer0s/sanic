@@ -15,8 +15,7 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
   while (tmp[i] != ' ') {
     ++i;
   }
-  char *method = GC_MALLOC_ATOMIC(i);
-  strncpy(method, tmp, i);
+  char *method = GC_STRNDUP(tmp, i);
 
   for (int j = 0; method[j]; j++) {
     method[j] = toupper(method[j]); // NOLINT(cppcoreguidelines-narrowing-conversions)
@@ -46,23 +45,83 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
   while (tmp[i] != ' ') {
     ++i;
   }
-  char *path = GC_malloc_atomic((i - from) + 1);
-  bzero(path, (i + from) + 1);
-  strncpy(path, tmp + from, i - from);
-
+  char *path = GC_STRNDUP(tmp + from, i - from);
   request->path = path;
+
+  char *request_path = NULL;
+  char *request_query = NULL;
+
+  //Lookup if there is a query part
+  size_t request_path_length = 0;
+  size_t old_request_path_length = strlen(request->path);
+  while (request_path_length < old_request_path_length && request->path[request_path_length] != '?') {
+    ++request_path_length;
+  }
+
+  //If there is no query part, continue as is
+  if (request_path_length != old_request_path_length) {
+    //Allocate memory for the query part
+    request_path = GC_STRDUP(request->path);
+
+    //Allocate temporary memory for the query part
+    size_t request_query_length = old_request_path_length - request_path_length;
+    request_query = GC_STRNDUP(request->path + request_path_length + 1, request_query_length);
+
+    char* query_token;
+    char* query_rest = request_query;
+
+    //Search for query params
+    while ((query_token = strtok_r(query_rest, "&", &query_rest))) {
+      char* k = strtok(query_token, "=");
+      if (k == NULL) {
+        continue;
+      }
+
+      char* v = strtok(NULL, "=");
+      if (v == NULL) {
+        continue;
+      }
+
+      //Allocate memory for the query param and insert it into the request
+      struct sanic_http_param *param = GC_MALLOC(sizeof(struct sanic_http_param));
+      param->key = GC_STRDUP(k);
+      param->value = GC_STRDUP(v);
+
+      sanic_http_param_insert(&request->query_param, param);
+    }
+    GC_FREE(request->path);
+    GC_FREE(request_query);
+
+    request->path = request_path;
+  }
+
+  if (request_path == NULL) {
+    request_path = request->path;
+  }
+
+  request->path_parts = NULL;
+  char* path_token;
+  char* path_rest = GC_STRDUP(request_path);
+  while ((path_token = strtok_r(path_rest, "/", &path_rest))) {
+    request->path_len++;
+    request->path_parts = GC_REALLOC(request->path_parts, request->path_len * sizeof(char*));
+    request->path_parts[request->path_len - 1] = GC_STRDUP(path_token);
+  }
+
+  if (request->path_len == 0) {
+    request->path_len = 1;
+    request->path_parts = GC_MALLOC(request->path_len * sizeof(char*));
+    request->path_parts[0] = GC_STRDUP("");
+  }
 
   if (i <= n) {
     i++;
     ssize_t to = n - 2;
-    char *version = GC_malloc_atomic((to - i) + 1);
-    bzero(version, (to - i) + 1);
-    strncpy(version, tmp + i, to - i);
-
+    char *version = GC_STRNDUP(tmp + i, to - i);
     request->version = version;
   }
 
-  GC_free(method);
+  GC_FREE(method);
 }
 
 void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t n) {
@@ -73,16 +132,12 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t
     ++i;
   }
   i--;
-  char *key = GC_MALLOC_ATOMIC(i + 1);
-  bzero(key, i + 1);
-  strncpy(key, tmp, i);
+  char *key = GC_STRNDUP(tmp, i);
 
   i += 2; //skip ': '
 
   ssize_t to = n - 2;
-  char *value = GC_MALLOC_ATOMIC((to - i) + 1);
-  bzero(value, (to - i) + 1);
-  strncpy(value, tmp + i, to - i);
+  char *value = GC_STRNDUP(tmp + i, to - i);
 
   struct sanic_http_header *new = GC_MALLOC(sizeof(struct sanic_http_header));
   new->key = key;

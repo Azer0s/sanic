@@ -25,9 +25,10 @@ struct sanic_route {
     void (*callback)(struct sanic_http_request *, struct sanic_http_response *res);
 #endif
 
-    struct sanic_route *next;
     struct sanic_route_part *parts;
     size_t parts_count;
+
+    struct sanic_route *next;
 };
 
 #ifdef DEFINE_ROUTES

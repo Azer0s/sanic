@@ -28,14 +28,13 @@ void sanic_insert_route(struct sanic_route route) {
       char *p;
       enum sanic_route_part_type type;
 
-      if (strncmp(buf, "/{:", 3) == 0 && buf[strlen(buf) - 1] == '}') {
-        p = GC_MALLOC_ATOMIC(strlen(buf) - 3);
-        bzero(p, strlen(buf) - 3);
-        strncpy(p, buf + 3, strlen(buf) - 4);
+      size_t buf_len = strlen(buf);
+
+      if (strncmp(buf, "/{:", 3) == 0 && buf[buf_len - 1] == '}') {
+        p = GC_STRNDUP(buf + 3, buf_len - 4);
         type = TYPE_PATH_PARAM;
       } else {
-        p = GC_MALLOC_ATOMIC(strlen(buf));
-        strcpy(p, buf);
+        p = GC_STRDUP(buf + 1);
         type = TYPE_FIXED;
       }
 
