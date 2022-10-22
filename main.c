@@ -91,8 +91,7 @@ enum sanic_middleware_action teapot_filter(struct sanic_http_request *req, struc
 
 int main() {
   sanic_init();
-
-  sanic_log_level = LEVEL_TRACE;
+  sanic_log_level = LEVEL_DEBUG;
 
   sanic_use_middleware(http_version_filter);
   sanic_use_middleware(teapot_filter);

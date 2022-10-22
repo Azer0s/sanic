@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <time.h>
 
+#define str(s) #s
+#define xstr(s) str(s)
+
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -44,6 +47,10 @@ strftime(__buff, sizeof(__buff), "%Y-%m-%d %H:%M:%S", &__tm_now) ;
 
 #if SANIC_LOG_DEBUG
   #if !SANIC_LOG_TIME
+#ifndef SANIC_LOG_SPACER
+#define SANIC_LOG_SPACER 105
+#endif
+
 #define sanic_log_fmt_no_nl(str, level_str, color, ...) \
 color "%-8s" ANSI_COLOR_RESET \
 ANSI_COLOR_GRAY "%s:%d " ANSI_COLOR_RESET        \
@@ -52,8 +59,12 @@ str, "[" level_str "]", FILENAME, __LINE__, __VA_ARGS__
 #define sanic_fmt_log_req(req, str, level, level_str, color, ...) sanic_if_log_level(level, \
 char __str_buff[500]; \
 sprintf(__str_buff, sanic_log_fmt_no_nl(str, level_str, color, __VA_ARGS__));\
-printf("%-95s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
+printf("%-" xstr(SANIC_LOG_SPACER) "s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
   #else
+#ifndef SANIC_LOG_SPACER
+#define SANIC_LOG_SPACER 135
+#endif
+
 #define sanic_log_fmt_no_nl(str, level_str, color, ...) \
 ANSI_COLOR_GRAY "%s " color "%-8s" ANSI_COLOR_RESET     \
 ANSI_COLOR_GRAY "%s:%d " ANSI_COLOR_RESET               \
@@ -62,10 +73,14 @@ str, __buff, "[" level_str "]", FILENAME, __LINE__, __VA_ARGS__
 #define sanic_fmt_log_req(req, str, level, level_str, color, ...) sanic_if_log_level(level, sanic_get_time_to_buff \
 char __str_buff[500];                                                                                              \
 sprintf(__str_buff, sanic_log_fmt_no_nl(str, level_str, color, __VA_ARGS__));                                      \
-printf("%-135s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
+printf("%-" xstr(SANIC_LOG_SPACER) "s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
   #endif
 #else
   #if !SANIC_LOG_TIME
+#ifndef SANIC_LOG_SPACER
+#define SANIC_LOG_SPACER 80
+#endif
+
 #define sanic_log_fmt_no_nl(str, level_str, color, ...) \
 color "%-8s" ANSI_COLOR_RESET                           \
 str, "[" level_str "]", __VA_ARGS__
@@ -73,8 +88,12 @@ str, "[" level_str "]", __VA_ARGS__
 #define sanic_fmt_log_req(req, str, level, level_str, color, ...) sanic_if_log_level(level, \
 char __str_buff[500];                                                                       \
 sprintf(__str_buff, sanic_log_fmt_no_nl(str, level_str, color, __VA_ARGS__));               \
-printf("%-70s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
+printf("%-" xstr(SANIC_LOG_SPACER) "s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
   #else
+#ifndef SANIC_LOG_SPACER
+#define SANIC_LOG_SPACER 100
+#endif
+
 #define sanic_log_fmt_no_nl(str, level_str, color, ...) \
 ANSI_COLOR_GRAY "%s " color "%-8s" ANSI_COLOR_RESET     \
 str, __buff, "[" level_str "]", __VA_ARGS__
@@ -82,7 +101,7 @@ str, __buff, "[" level_str "]", __VA_ARGS__
 #define sanic_fmt_log_req(req, str, level, level_str, color, ...) sanic_if_log_level(level, sanic_get_time_to_buff \
 char __str_buff[500];                                                                                              \
 sprintf(__str_buff, sanic_log_fmt_no_nl(str, level_str, color, __VA_ARGS__));                                      \
-printf("%-110s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
+printf("%-" xstr(SANIC_LOG_SPACER) "s req_id=%s fd=%d\n", __str_buff, (req)->req_id, (req)->conn_fd);)
   #endif
 #endif
 
