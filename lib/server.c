@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <uuid/uuid.h>
+#include <uuid4.h>
 #include <gc.h>
 
 #include "include/internal/sanic_ascii.h"
@@ -89,11 +89,9 @@ int sanic_http_serve(uint16_t port) {
 
     int conn_fd = accept(sock_fd, (struct sockaddr *) &conn_addr, (socklen_t *) &len);
 
-    char req_id[37] = {0};
+    char req_id[UUID4_LEN] = {0};
     bzero(req_id, 37);
-    uuid_t req_id_struct;
-    uuid_generate(req_id_struct);
-    uuid_unparse_lower(req_id_struct, req_id);
+    uuid4_generate(req_id);
 
     struct sanic_http_request tmp_request;
     tmp_request.req_id = req_id;

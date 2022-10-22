@@ -1,3 +1,6 @@
 [submodule "ext/bdwgc"]
 	path = ext/bdwgc
 	url = https://github.com/ivmai/bdwgc.git
+[submodule "ext/uuid4"]
+	path = ext/uuid4
+	url = https://github.com/rxi/uuid4.git

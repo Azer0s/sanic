@@ -28,8 +28,7 @@ enum sanic_middleware_action http_version_filter(struct sanic_http_request *req,
 #ifdef SANIC_USE_CLANG_BLOCKS
 
 int main() {
-  GC_init();
-
+  sanic_init();
   sanic_log_level = LEVEL_DEBUG;
 
   sanic_use_middleware(^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
@@ -91,6 +90,8 @@ enum sanic_middleware_action teapot_filter(struct sanic_http_request *req, struc
 }
 
 int main() {
+  sanic_init();
+
   sanic_log_level = LEVEL_TRACE;
 
   sanic_use_middleware(http_version_filter);

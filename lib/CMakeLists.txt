@@ -9,6 +9,9 @@ add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 add_subdirectory(../ext/bdwgc "${CMAKE_CURRENT_BINARY_DIR}/ext/bdwgc")
 include_directories(../ext/bdwgc/include)
 
+add_subdirectory(../ext/ "${CMAKE_CURRENT_BINARY_DIR}/ext/uuid4")
+include_directories(../ext/uuid4/src)
+
 add_definitions(-Wno-string-plus-int)
 add_definitions(-Wno-format-extra-args)
 
@@ -22,5 +25,6 @@ add_library(sanic STATIC
         internal/http_util.c
         internal/request_handler.c
         internal/request_util.c
-        internal/middleware_handler.c)
+        internal/middleware_handler.c sanic.c)
 target_link_libraries(sanic PUBLIC gc)
+target_link_libraries(sanic PUBLIC uuid4)

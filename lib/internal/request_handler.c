@@ -2,7 +2,6 @@
 #include "gc.h"
 #include <unistd.h>
 #include <string.h>
-#include <uuid/uuid.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 

@@ -10,4 +10,6 @@
 #include "route.h"
 #include "server.h"
 
+void sanic_init();
+
 #endif //SANIC_SANIC_H

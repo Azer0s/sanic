@@ -12,8 +12,8 @@ Originally, I built sanic with clang blocks in mind. So they're supported out of
 #include <gc.h>
 #include <sanic.h>
 
-GC_init();
-sanic_log_level = LEVEL_INFO;
+sanic_init();
+sanic_log_level = LEVEL_DEBUG;
 
 sanic_http_on_get("/", ^void(struct sanic_http_request *req) {
   const char *html = "<h1>Hello, World!</h1>";
@@ -38,7 +38,7 @@ A less elegant solution is to just pass handler functions as callbacks. With gcc
 although I haven't found out how to make cmake understand that.
 
 ```c
-GC_init();
+sanic_init();
 
 sanic_http_on_get("/", handle_index);
 sanic_http_on_get("/people/{:name}", handle_get_person);
