@@ -66,10 +66,11 @@ void sanic_http_on(enum sanic_http_method method, const char *path,
         void (*callback)(struct sanic_http_request *, struct sanic_http_response *)
 #endif
 ) {
-  struct sanic_route route;
-  route.path = path;
-  route.callback = callback;
-  route.method = method;
+  struct sanic_route route = {
+    .path = path,
+    .callback = callback,
+    .method = method
+  };
   sanic_insert_route(route);
 }
 

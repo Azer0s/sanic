@@ -57,22 +57,21 @@ int sanic_http_serve(uint16_t port) {
     return 1;
   }
 
-#if SANIC_SOCKET_NO_LINGER
   struct linger l = {
-          .l_onoff = 1,
-          .l_linger = 0
+    .l_onoff = 1,
+    .l_linger = 0
   };
 
   if (setsockopt(sock_fd, SOL_SOCKET, SO_LINGER, &l, sizeof(l)) != 0) {
     sanic_log_error("setting SO_LINGER failed");
     return 1;
   }
-#endif
 
-  struct sockaddr_in sock_addr;
-  sock_addr.sin_family = AF_INET;
-  sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  sock_addr.sin_port = htons(port);
+  struct sockaddr_in sock_addr = {
+    .sin_family = AF_INET,
+    .sin_addr.s_addr = htonl(INADDR_ANY),
+    .sin_port = htons(port)
+  };
 
   if (bind(sock_fd, (struct sockaddr *) &sock_addr, sizeof(sock_addr)) != 0) {
     sanic_fmt_log_error("socket bind failed: %s", strerror(errno))
@@ -98,9 +97,10 @@ int sanic_http_serve(uint16_t port) {
     bzero(req_id, 37);
     uuid4_generate(req_id);
 
-    struct sanic_http_request tmp_request;
-    tmp_request.req_id = req_id;
-    tmp_request.conn_fd = conn_fd;
+    struct sanic_http_request tmp_request = {
+      .req_id = req_id,
+      .conn_fd = conn_fd
+    };
 
     sanic_log_trace_req(&tmp_request, "accepted new connection")
     if (conn_fd < 0) {

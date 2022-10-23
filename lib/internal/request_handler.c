@@ -20,8 +20,8 @@ void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_resp
   fprintf(conn_file, "HTTP/1.1 %d %s\n", status, sanic_get_status_text(status));
 
   struct sanic_http_header closed_header = (struct sanic_http_header) {
-          .key = "Connection",
-          .value = "Closed"
+    .key = "Connection",
+    .value = "Closed"
   };
 
   sanic_http_header_insert(&res->headers, &closed_header);
