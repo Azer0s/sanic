@@ -71,7 +71,6 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
     return;
   }
 
-  //TODO: add keepalive support
   //TODO: add request validation
   //TODO: add options for auto deserialization
 

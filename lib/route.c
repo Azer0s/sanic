@@ -1,7 +1,7 @@
 #define DEFINE_ROUTES
 
 #include <string.h>
-#include <gc.h>
+#include <stdlib.h>
 
 #include "include/route.h"
 
@@ -31,14 +31,14 @@ void sanic_insert_route(struct sanic_route route) {
       size_t buf_len = strlen(buf);
 
       if (strncmp(buf, "/{:", 3) == 0 && buf[buf_len - 1] == '}') {
-        p = GC_STRNDUP(buf + 3, buf_len - 4);
+        p = strndup(buf + 3, buf_len - 4);
         type = TYPE_PATH_PARAM;
       } else {
-        p = GC_STRDUP(buf + 1);
+        p = strdup(buf + 1);
         type = TYPE_FIXED;
       }
 
-      parts = GC_REALLOC(parts, parts_count * sizeof(struct sanic_route_part));
+      parts = realloc(parts, parts_count * sizeof(struct sanic_route_part));
       parts[parts_count - 1].type = type;
       parts[parts_count - 1].value = p;
 
@@ -50,7 +50,8 @@ void sanic_insert_route(struct sanic_route route) {
     i++;
   } while (i <= route_path_len);
 
-  *current = GC_MALLOC(sizeof(struct sanic_route));
+  //We malloc this because the GC should not scan this and this data stays with us
+  *current = malloc(sizeof(struct sanic_route));
   (*current)->path = route.path;
   (*current)->callback = route.callback;
   (*current)->next = NULL;
