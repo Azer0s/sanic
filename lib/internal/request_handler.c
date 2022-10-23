@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "gc.h"
+#include <gc.h>
 #include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -62,7 +62,7 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
   struct sanic_http_request *request = sanic_read_request(conn_fd, init_req);
   if (request == NULL) {
     sanic_log_warn_req(init_req, "there was an error reading the request")
-    sanic_finish_request(init_req, &(struct sanic_http_response){
+    sanic_finish_request(init_req, &(struct sanic_http_response) {
       .status = 400,
     }, addr_str);
     return;
@@ -90,7 +90,7 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
     }
 
     for (int i = 0; i < request->path_len; ++i) {
-      if((*current_route)->parts[i].type == TYPE_FIXED) {
+      if ((*current_route)->parts[i].type == TYPE_FIXED) {
         if (strcmp((*current_route)->parts[i].value, request->path_parts[i]) != 0) {
           goto skip_route;
         }
@@ -110,7 +110,7 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
   }
 
   for (int i = 0; i < request->path_len; ++i) {
-    if((*current_route)->parts[i].type == TYPE_PATH_PARAM) {
+    if ((*current_route)->parts[i].type == TYPE_PATH_PARAM) {
       struct sanic_http_param *path_param = GC_MALLOC(sizeof(struct sanic_http_param));
       path_param->key = GC_STRDUP((*current_route)->parts[i].value);
       path_param->value = GC_STRDUP(request->path_parts[i]);

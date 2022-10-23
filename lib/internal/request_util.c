@@ -4,9 +4,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <ctype.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include "gc.h"
+#include <gc.h>
 
 #include "../include/internal/request_util.h"
 #include "../include/http_method.h"
@@ -70,17 +68,17 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
     size_t request_query_length = old_request_path_length - request_path_length;
     request_query = GC_STRNDUP(request->path + request_path_length + 1, request_query_length);
 
-    char* query_token;
-    char* query_rest = request_query;
+    char *query_token;
+    char *query_rest = request_query;
 
     //Search for query params
     while ((query_token = strtok_r(query_rest, "&", &query_rest))) {
-      char* k = strtok(query_token, "=");
+      char *k = strtok(query_token, "=");
       if (k == NULL) {
         continue;
       }
 
-      char* v = strtok(NULL, "=");
+      char *v = strtok(NULL, "=");
       if (v == NULL) {
         continue;
       }
@@ -104,18 +102,18 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
   }
 
   request->path_parts = NULL;
-  char* path_token;
-  char* path_rest = GC_STRDUP(request_path);
+  char *path_token;
+  char *path_rest = GC_STRDUP(request_path);
   while ((path_token = strtok_r(path_rest, "/", &path_rest))) {
     request->path_len++;
-    request->path_parts = GC_REALLOC(request->path_parts, request->path_len * sizeof(char*));
+    request->path_parts = GC_REALLOC(request->path_parts, request->path_len * sizeof(char *));
     request->path_parts[request->path_len - 1] = GC_STRDUP(path_token);
     //TODO: decode path param
   }
 
   if (request->path_len == 0) {
     request->path_len = 1;
-    request->path_parts = GC_MALLOC(request->path_len * sizeof(char*));
+    request->path_parts = GC_MALLOC(request->path_len * sizeof(char *));
     request->path_parts[0] = GC_STRDUP("");
   }
 

@@ -11,7 +11,7 @@ enum sanic_route_part_type {
 
 struct sanic_route_part {
     enum sanic_route_part_type type;
-    char* value;
+    char *value;
 };
 
 struct sanic_route;
