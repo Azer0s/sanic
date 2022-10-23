@@ -36,6 +36,7 @@ although I haven't found out how to make cmake understand that.
 
 ```c
 sanic_init();
+sanic_log_level = LEVEL_INFO;
 
 sanic_http_on_get("/", handle_index);
 sanic_http_on_get("/people/{:name}", handle_get_person);

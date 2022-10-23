@@ -63,7 +63,7 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
   if (request == NULL) {
     sanic_log_warn_req(init_req, "there was an error reading the request")
     sanic_finish_request(init_req, &(struct sanic_http_response){
-      .status = 500,
+      .status = 400,
     }, addr_str);
     return;
   }

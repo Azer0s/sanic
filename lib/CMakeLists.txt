@@ -6,6 +6,8 @@ set(CMAKE_C_STANDARD 17)
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
+add_definitions(-DGC_THREADS)
+
 add_subdirectory(../ext/bdwgc "${CMAKE_CURRENT_BINARY_DIR}/ext/bdwgc")
 include_directories(../ext/bdwgc/include)
 

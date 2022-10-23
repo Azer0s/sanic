@@ -156,8 +156,8 @@ struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request 
   //TODO: Add error handling for invalid HTTP requests
   //TODO: Add cookie support
 
-  int flags = fcntl(fd, F_GETFL, 0);
-  fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+  //int flags = fcntl(fd, F_GETFL, 0);
+  //fcntl(fd, F_SETFL, flags | O_NONBLOCK);
   FILE *conn_file;
 
   if ((conn_file = fdopen(fd, "r")) == NULL) {

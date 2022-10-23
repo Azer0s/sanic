@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <pthread.h>
 
 #define str(s) #s
 #define xstr(s) str(s)
@@ -35,13 +36,25 @@ enum sanic_log_level_enum sanic_log_level = LEVEL_TRACE;
 extern enum sanic_log_level_enum sanic_log_level;
 #endif
 
-#define sanic_if_log_level(level, action) if(sanic_log_level <= (level)) { action; }
-#define sanic_get_time_to_buff   \
-time_t __now = time(NULL);       \
-struct tm __tm_now ;             \
-localtime_r(&__now, &__tm_now);  \
-char __buff[100];                \
-strftime(__buff, sizeof(__buff), "%Y-%m-%d %H:%M:%S", &__tm_now) ;
+#ifdef DEFINE_PRINT_MU
+pthread_mutex_t print_mu;
+#else
+extern pthread_mutex_t print_mu;
+#endif
+
+#define sanic_if_log_level(level, action) \
+if(sanic_log_level <= (level)) {          \
+  pthread_mutex_lock(&print_mu);          \
+  action;                                 \
+  pthread_mutex_unlock(&print_mu);        \
+}
+
+#define sanic_get_time_to_buff     \
+  time_t __now = time(NULL);       \
+  struct tm __tm_now ;             \
+  localtime_r(&__now, &__tm_now);  \
+  char __buff[100];                \
+  strftime(__buff, sizeof(__buff), "%Y-%m-%d %H:%M:%S", &__tm_now);
 
 #define sanic_log_fmt(str, level_str, color, ...) sanic_log_fmt_no_nl(str "\n", level_str, color, __VA_ARGS__)
 

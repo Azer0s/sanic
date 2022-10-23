@@ -1,5 +1,3 @@
-#define DEFINE_LOG_LEVEL
-
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <signal.h>
