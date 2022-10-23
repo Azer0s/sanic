@@ -4,6 +4,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <stdlib.h>
 
 #include "../include/log.h"
 #include "../include/internal/request_handler.h"
@@ -46,15 +47,28 @@ void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_resp
     sanic_fmt_log_warn("failed to close connection to %s", addr_str)
   }
 
-  GC_gcollect();
+  GC_FREE(req);
+  GC_FREE(res);
+
+  GC_gcollect_and_unmap();
 
 #if GC_DEBUG
   printf("%zu\n", GC_get_heap_size());
   printf("%zu\n", GC_get_free_bytes());
+
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+  printf("Memory usage: %ld kilobytes\n", usage.ru_maxrss);
 #endif
 }
 
-void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct sanic_http_request *init_req) {
+struct connection_thread_data {
+    int conn_fd;
+    struct sockaddr_in conn_addr;
+    struct sanic_http_request *init_req;
+};
+
+void sanic_connection_thread(int conn_fd, struct sockaddr_in conn_addr, struct sanic_http_request *init_req) {
   char addr_str[INET_ADDRSTRLEN];
   inet_ntop(AF_INET, &(conn_addr.sin_addr), addr_str, INET_ADDRSTRLEN);
   sanic_fmt_log_info_req(init_req, "serving %s", addr_str)
@@ -122,4 +136,21 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
   response->status = 200;
   (*current_route)->callback(request, response);
   sanic_finish_request(request, response, addr_str);
+}
+
+void *connection_thread_bootstrap(void *thread_data) {
+  struct connection_thread_data *thread_data_struct = thread_data;
+  sanic_connection_thread(thread_data_struct->conn_fd, thread_data_struct->conn_addr, thread_data_struct->init_req);
+  free(thread_data);
+  pthread_exit(NULL);
+}
+
+void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct sanic_http_request *init_req) {
+  struct connection_thread_data *thread_data = malloc(sizeof(struct connection_thread_data));
+  thread_data->conn_fd = conn_fd;
+  thread_data->conn_addr = conn_addr;
+  thread_data->init_req = init_req;
+
+  pthread_t conn_thread;
+  GC_pthread_create(&conn_thread, NULL, connection_thread_bootstrap, thread_data);
 }

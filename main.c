@@ -29,7 +29,7 @@ enum sanic_middleware_action http_version_filter(struct sanic_http_request *req,
 
 int main() {
   sanic_init();
-  sanic_log_level = LEVEL_DEBUG;
+  sanic_log_level = LEVEL_WARN;
 
   sanic_use_middleware(^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
     return http_version_filter(req, res);

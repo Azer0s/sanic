@@ -226,5 +226,6 @@ struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request 
   }
 
   free(tmp);
+  GC_FREE(block);
   return request;
 }

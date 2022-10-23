@@ -8,6 +8,7 @@ add_definitions(-DSANIC_USE_CLANG_BLOCKS)
 add_definitions(-DSANIC_LOG_DEBUG)
 add_definitions(-DSANIC_LOG_TIME)
 add_definitions(-DSANIC_SHOW_LOGO)
+add_definitions(-DGC_DEBUG)
 
 add_subdirectory(lib)
 include_directories(lib/include)
