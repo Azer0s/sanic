@@ -19,14 +19,14 @@ void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_resp
   int status = res->status == -1 ? 404 : res->status;
   fprintf(conn_file, "HTTP/1.1 %d %s\n", status, sanic_get_status_text(status));
 
-  struct sanic_http_header closed_header = (struct sanic_http_header) {
+  struct sanic_http_param closed_header = (struct sanic_http_param) {
     .key = "Connection",
     .value = "Closed"
   };
 
-  sanic_http_header_insert(&res->headers, &closed_header);
+  sanic_http_param_insert(&res->headers, &closed_header);
 
-  struct sanic_http_header **current = &res->headers;
+  struct sanic_http_param **current = &res->headers;
   while (*current != NULL) {
     fprintf(conn_file, "%s: %s\n", (*current)->key, (*current)->value);
     current = &(*current)->next;
@@ -59,9 +59,14 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
   inet_ntop(AF_INET, &(conn_addr.sin_addr), addr_str, INET_ADDRSTRLEN);
   sanic_fmt_log_info_req(init_req, "serving %s", addr_str)
 
-  struct sanic_http_request *request = sanic_read_request(conn_fd);
-  request->conn_fd = conn_fd;
-  request->req_id = init_req->req_id;
+  struct sanic_http_request *request = sanic_read_request(conn_fd, init_req);
+  if (request == NULL) {
+    sanic_log_warn_req(init_req, "there was an error reading the request")
+    sanic_finish_request(init_req, &(struct sanic_http_response){
+      .status = 500,
+    }, addr_str);
+    return;
+  }
 
   struct sanic_http_response *response = GC_MALLOC(sizeof(struct sanic_http_response));
   response->headers = NULL;

@@ -2,7 +2,6 @@
 #define SANIC_SANIC_H
 
 #include "log.h"
-#include "http_header.h"
 #include "http_method.h"
 #include "http_request.h"
 #include "http_response.h"

@@ -4,11 +4,14 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "gc.h"
 
 #include "../include/internal/request_util.h"
 #include "../include/http_method.h"
 #include "../include/http_request.h"
+#include "../include/log.h"
 
 void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n) {
   int i = 0;
@@ -141,18 +144,20 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t
   ssize_t to = n - 2;
   char *value = GC_STRNDUP(tmp + i, to - i);
 
-  struct sanic_http_header *new = GC_MALLOC(sizeof(struct sanic_http_header));
+  struct sanic_http_param *new = GC_MALLOC(sizeof(struct sanic_http_param));
   new->key = key;
   new->value = value;
   new->next = NULL;
 
-  sanic_http_header_insert(&request->headers, new);
+  sanic_http_param_insert(&request->headers, new);
 }
 
-struct sanic_http_request *sanic_read_request(int fd) {
+struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request *init_req) {
   //TODO: Add error handling for invalid HTTP requests
   //TODO: Add cookie support
 
+  int flags = fcntl(fd, F_GETFL, 0);
+  fcntl(fd, F_SETFL, flags | O_NONBLOCK);
   FILE *conn_file;
 
   if ((conn_file = fdopen(fd, "r")) == NULL) {
@@ -173,9 +178,12 @@ struct sanic_http_request *sanic_read_request(int fd) {
   enum {
       PATH,
       HEADER,
+      BODY
   } mode = PATH;
 
   struct sanic_http_request *request = GC_MALLOC(sizeof(struct sanic_http_request));
+  request->conn_fd = fd;
+  request->req_id = init_req->req_id;
   request->headers = NULL;
 
   ssize_t n;
@@ -199,6 +207,23 @@ struct sanic_http_request *sanic_read_request(int fd) {
 
       default:
         assert(false);
+    }
+  }
+
+  struct sanic_http_param *content_length;
+  if ((content_length = sanic_http_param_get(&request->headers, "Content-Length")) != NULL) {
+    char *lenEnd;
+    int len = (int) strtol(content_length->value, &lenEnd, 10);
+
+    if (content_length->value != lenEnd) {
+      char *buffer = GC_MALLOC_ATOMIC(len + 1);
+      bzero(buffer, len + 1);
+      if (!fread(buffer, len, 1, conn_file)) {
+        sanic_log_warn_req(request, "could not read the request body")
+        return NULL;
+      }
+
+      request->body = buffer;
     }
   }
 

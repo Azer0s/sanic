@@ -16,9 +16,9 @@ add_definitions(-Wno-string-plus-int)
 add_definitions(-Wno-format-extra-args)
 
 add_library(sanic STATIC
-        http_header.c
         http_method.c
         http_request.c
+        http_response.c
         middleware.c
         route.c
         sanic.c

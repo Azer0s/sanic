@@ -125,6 +125,7 @@ printf(sanic_log_fmt(str, "INFO", ANSI_COLOR_GREEN, __VA_ARGS__)))
 printf(sanic_log_fmt(str, "WARN", ANSI_COLOR_YELLOW, __VA_ARGS__)))
 #define sanic_log_warn(str) sanic_fmt_log_warn(str, NULL)
 #define sanic_fmt_log_warn_req(req, str, ...) sanic_fmt_log_req(req, str, LEVEL_WARN, "WARN", ANSI_COLOR_YELLOW, __VA_ARGS__)
+#define sanic_log_warn_req(req, str) sanic_fmt_log_warn_req(req, str, NULL)
 
 #define sanic_fmt_log_error(str, ...) sanic_if_log_level(LEVEL_ERROR, sanic_get_time_to_buff \
 fprintf(stderr, sanic_log_fmt(str, "ERROR", ANSI_COLOR_RED, __VA_ARGS__)))

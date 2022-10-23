@@ -52,6 +52,7 @@ void sanic_insert_route(struct sanic_route route) {
 
   //We malloc this because the GC should not scan this and this data stays with us
   *current = malloc(sizeof(struct sanic_route));
+  (*current)->method = route.method;
   (*current)->path = route.path;
   (*current)->callback = route.callback;
   (*current)->next = NULL;
