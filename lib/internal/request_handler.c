@@ -49,17 +49,6 @@ void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_resp
 
   GC_FREE(req);
   GC_FREE(res);
-
-  GC_gcollect_and_unmap();
-
-#if GC_DEBUG
-  printf("%zu\n", GC_get_heap_size());
-  printf("%zu\n", GC_get_free_bytes());
-
-  struct rusage usage;
-  getrusage(RUSAGE_SELF, &usage);
-  printf("Memory usage: %ld kilobytes\n", usage.ru_maxrss);
-#endif
 }
 
 struct connection_thread_data {
@@ -142,7 +131,18 @@ void *connection_thread_bootstrap(void *thread_data) {
   struct connection_thread_data *thread_data_struct = thread_data;
   sanic_connection_thread(thread_data_struct->conn_fd, thread_data_struct->conn_addr, thread_data_struct->init_req);
   free(thread_data);
-  pthread_exit(NULL);
+
+  GC_gcollect_and_unmap();
+
+#if GC_DEBUG
+  GC_dump();
+
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+  printf("Memory usage: %ld kilobytes\n", usage.ru_maxrss);
+#endif
+
+  return NULL;
 }
 
 void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct sanic_http_request *init_req) {
@@ -151,6 +151,12 @@ void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct s
   thread_data->conn_addr = conn_addr;
   thread_data->init_req = init_req;
 
+  //TODO: add ring buffer for threads
+  //if the buffer is full, join the first inserted pthread
+  //and remove it from the ringbuffer
+  //then insert the new thread
+
   pthread_t conn_thread;
   GC_pthread_create(&conn_thread, NULL, connection_thread_bootstrap, thread_data);
+  GC_pthread_join(conn_thread, NULL);
 }

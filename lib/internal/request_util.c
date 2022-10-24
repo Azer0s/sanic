@@ -164,7 +164,7 @@ struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request 
   }
 
   size_t size = 1;
-  char *block = GC_MALLOC_ATOMIC(sizeof(char) * size);
+  char *block = malloc(sizeof(char) * size);
   *block = '\0';
 
   //We malloc this because getline sometimes does system reallocs
@@ -189,7 +189,7 @@ struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request 
     if (strcmp(tmp, "\r\n") == 0) {
       break;
     }
-    block = GC_REALLOC(block, size + old_size);
+    block = realloc(block, size + old_size);
     old_size += size;
     strcat(block, tmp);
 
@@ -226,6 +226,6 @@ struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request 
   }
 
   free(tmp);
-  GC_FREE(block);
+  free(block);
   return request;
 }
