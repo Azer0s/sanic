@@ -75,7 +75,7 @@ void sanic_connection_thread(int conn_fd, struct sockaddr_in conn_addr, struct s
   response->headers = NULL;
   response->status = -1;
 
-  if (sanic_handle_middlewares(request, response, addr_str) == ACTION_STOP) {
+  if (sanic_handle_middlewares(request, response, addr_str) != ACTION_PASS) {
     return;
   }
 

@@ -6,7 +6,8 @@
 
 enum sanic_middleware_action {
     ACTION_STOP,
-    ACTION_PASS
+    ACTION_PASS,
+    ACTION_REPLY //same as stop, but doesn't get logged as a warning
 };
 
 struct sanic_middleware;
