@@ -20,11 +20,12 @@ include_directories(../ext/uuid4/src)
 add_definitions(-Wno-string-plus-int)
 add_definitions(-Wno-format-extra-args)
 
-if (UNIX)
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    add_definitions(-DSANIC_IO_URING)
+    set(server_impl server_linux.c)
+elseif (UNIX)
+    add_definitions(-DSANIC_KQUEUE)
     set(server_impl server_bsd.c)
-elseif (LINUX)
-    message( FATAL_ERROR "linux support for sanic is not done yet :/" )
-    set(server_impl server_linux.c.c)
 else()
     message( FATAL_ERROR "sanic is not supported on this system :(" )
 endif()
@@ -43,6 +44,9 @@ add_library(sanic STATIC
         internal/request_handler.c
         internal/request_util.c
         internal/middleware_handler.c
-        internal/string_util.c)
+        internal/string_util.c internal/server_internals.c)
 target_link_libraries(sanic PUBLIC gc)
 target_link_libraries(sanic PUBLIC uuid4)
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    target_link_libraries(sanic PUBLIC uring)
+endif()

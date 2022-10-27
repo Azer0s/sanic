@@ -4,7 +4,7 @@ project(sanic_main C)
 
 set(CMAKE_C_STANDARD 17)
 
-add_definitions(-DSANIC_USE_CLANG_BLOCKS)
+#add_definitions(-DSANIC_USE_CLANG_BLOCKS)
 add_definitions(-DSANIC_LOG_DEBUG)
 add_definitions(-DSANIC_LOG_TIME)
 add_definitions(-DSANIC_SHOW_LOGO)
