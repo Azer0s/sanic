@@ -11,6 +11,7 @@
 #include "../include/http_method.h"
 #include "../include/http_request.h"
 #include "../include/log.h"
+#include "../include/internal/string_util.h"
 
 void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n) {
   int i = 0;
@@ -18,10 +19,7 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
     ++i;
   }
   char *method = GC_STRNDUP(tmp, i);
-
-  for (int j = 0; method[j]; j++) {
-    method[j] = toupper(method[j]); // NOLINT(cppcoreguidelines-narrowing-conversions)
-  }
+  str_uppercase(method, i);
 
   if (strcmp(method, "GET") == 0) {
     request->method = METHOD_GET;

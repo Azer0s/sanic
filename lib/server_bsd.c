@@ -13,6 +13,7 @@
 #include "include/internal/sanic_ascii.h"
 #include "include/log.h"
 #include "include/internal/request_handler.h"
+#include "include/internal/string_util.h"
 
 volatile sig_atomic_t stop;
 volatile int sock_fd;
@@ -28,7 +29,8 @@ void sanic_shutdown_server() {
 }
 
 void sig_handler(int signum) {
-  sanic_log_debug("received interrupt");
+  char *sig_name = GC_STRDUP(sys_signame[signum]);
+  sanic_fmt_log_debug("received interrupt: SIG%s", str_uppercase(sig_name, strlen(sig_name)));
   sanic_shutdown_server();
   exit(0);
 }

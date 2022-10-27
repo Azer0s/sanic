@@ -42,6 +42,7 @@ add_library(sanic STATIC
         internal/http_param.c
         internal/request_handler.c
         internal/request_util.c
-        internal/middleware_handler.c)
+        internal/middleware_handler.c
+        internal/string_util.c)
 target_link_libraries(sanic PUBLIC gc)
 target_link_libraries(sanic PUBLIC uuid4)
