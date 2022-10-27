@@ -4,17 +4,11 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <sys/socket.h>
-#include <liburing.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
 #include <gc.h>
-#include <string.h>
-#include <stdlib.h>
 #include <errno.h>
-#include <errno.h>
-#include <uuid4.h>
-#include <gc.h>
 
 #include "../include/internal/sanic_ascii.h"
 #include "../include/log.h"

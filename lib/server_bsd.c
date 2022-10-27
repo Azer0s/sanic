@@ -16,17 +16,22 @@
 #include "include/log.h"
 #include "include/internal/request_handler.h"
 #include "include/internal/string_util.h"
+#include "include/internal/server_internals.h"
 
 volatile sig_atomic_t stop;
 volatile int sock_fd;
 
 char *sig2str(int signum) {
-  return sys_signame[signum];
+  return (char*) sys_signame[signum];
 }
 
 int sanic_http_serve(uint16_t port) {
   sanic_setup_interrupts(NULL, sig2str);
   int code = sanic_create_socket(port);
+
+  if (code != 0) {
+    return code;
+  }
 
   sanic_log_debug("initializing kqueue");
   int kq = kqueue();

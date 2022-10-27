@@ -1,8 +1,6 @@
 #ifndef SANIC_SERVER_INTERNALS_H
 #define SANIC_SERVER_INTERNALS_H
 
-#include <bits/types/sig_atomic_t.h>
-
 #ifdef DEFINE_INTERNAL_VARS
 volatile sig_atomic_t stop;
 volatile int sock_fd;
