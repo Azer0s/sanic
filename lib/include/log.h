@@ -118,30 +118,34 @@ printf("%-" xstr(SANIC_LOG_SPACER) "s req_id=%s fd=%d\n", __str_buff, (req)->req
   #endif
 #endif
 
-#define sanic_fmt_log_debug(str, ...) sanic_if_log_level(LEVEL_DEBUG, sanic_get_time_to_buff \
-printf(sanic_log_fmt(str, "DEBUG", ANSI_COLOR_MAGENTA, __VA_ARGS__)))
+#define sanic_fmt_log_debug(str, ...) do { sanic_if_log_level(LEVEL_DEBUG, sanic_get_time_to_buff \
+printf(sanic_log_fmt(str, "DEBUG", ANSI_COLOR_MAGENTA, __VA_ARGS__))) } while(0)
 #define sanic_log_debug(str) sanic_fmt_log_debug(str, NULL)
-#define sanic_fmt_log_debug_req(req, str, ...) sanic_fmt_log_req(req, str, LEVEL_DEBUG, "DEBUG", ANSI_COLOR_MAGENTA, __VA_ARGS__)
+#define sanic_fmt_log_debug_req(req, str, ...) do { \
+sanic_fmt_log_req(req, str, LEVEL_DEBUG, "DEBUG", ANSI_COLOR_MAGENTA, __VA_ARGS__) } while(0)
 
-#define sanic_fmt_log_trace(str, ...) sanic_if_log_level(LEVEL_TRACE, sanic_get_time_to_buff \
-printf(sanic_log_fmt(str, "TRACE", ANSI_COLOR_CYAN, __VA_ARGS__)))
+#define sanic_fmt_log_trace(str, ...) do { sanic_if_log_level(LEVEL_TRACE, sanic_get_time_to_buff \
+printf(sanic_log_fmt(str, "TRACE", ANSI_COLOR_CYAN, __VA_ARGS__))) } while(0)
 #define sanic_log_trace(str) sanic_fmt_log_trace(str, NULL)
-#define sanic_fmt_log_trace_req(req, str, ...) sanic_fmt_log_req(req, str, LEVEL_TRACE, "TRACE", ANSI_COLOR_CYAN, __VA_ARGS__)
+#define sanic_fmt_log_trace_req(req, str, ...) do { \
+sanic_fmt_log_req(req, str, LEVEL_TRACE, "TRACE", ANSI_COLOR_CYAN, __VA_ARGS__) } while(0)
 #define sanic_log_trace_req(req, str) sanic_fmt_log_trace_req(req, str, NULL)
 
-#define sanic_fmt_log_info(str, ...) sanic_if_log_level(LEVEL_INFO, sanic_get_time_to_buff \
-printf(sanic_log_fmt(str, "INFO", ANSI_COLOR_GREEN, __VA_ARGS__)))
+#define sanic_fmt_log_info(str, ...) do { sanic_if_log_level(LEVEL_INFO, sanic_get_time_to_buff \
+printf(sanic_log_fmt(str, "INFO", ANSI_COLOR_GREEN, __VA_ARGS__))) } while(0)
 #define sanic_log_info(str) sanic_fmt_log_info(str, NULL)
-#define sanic_fmt_log_info_req(req, str, ...) sanic_fmt_log_req(req, str, LEVEL_INFO, "INFO", ANSI_COLOR_GREEN, __VA_ARGS__)
+#define sanic_fmt_log_info_req(req, str, ...) do { \
+sanic_fmt_log_req(req, str, LEVEL_INFO, "INFO", ANSI_COLOR_GREEN, __VA_ARGS__) } while(0)
 
-#define sanic_fmt_log_warn(str, ...) sanic_if_log_level(LEVEL_WARN, sanic_get_time_to_buff \
-printf(sanic_log_fmt(str, "WARN", ANSI_COLOR_YELLOW, __VA_ARGS__)))
+#define sanic_fmt_log_warn(str, ...) do { sanic_if_log_level(LEVEL_WARN, sanic_get_time_to_buff \
+printf(sanic_log_fmt(str, "WARN", ANSI_COLOR_YELLOW, __VA_ARGS__))) } while(0)
 #define sanic_log_warn(str) sanic_fmt_log_warn(str, NULL)
-#define sanic_fmt_log_warn_req(req, str, ...) sanic_fmt_log_req(req, str, LEVEL_WARN, "WARN", ANSI_COLOR_YELLOW, __VA_ARGS__)
+#define sanic_fmt_log_warn_req(req, str, ...) do { \
+sanic_fmt_log_req(req, str, LEVEL_WARN, "WARN", ANSI_COLOR_YELLOW, __VA_ARGS__) } while(0)
 #define sanic_log_warn_req(req, str) sanic_fmt_log_warn_req(req, str, NULL)
 
-#define sanic_fmt_log_error(str, ...) sanic_if_log_level(LEVEL_ERROR, sanic_get_time_to_buff \
-fprintf(stderr, sanic_log_fmt(str, "ERROR", ANSI_COLOR_RED, __VA_ARGS__)))
+#define sanic_fmt_log_error(str, ...) do { sanic_if_log_level(LEVEL_ERROR, sanic_get_time_to_buff \
+fprintf(stderr, sanic_log_fmt(str, "ERROR", ANSI_COLOR_RED, __VA_ARGS__))) } while(0)
 #define sanic_log_error(str) sanic_fmt_log_error(str, NULL)
 
 #endif //SANIC_LOG_H

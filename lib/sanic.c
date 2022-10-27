@@ -12,7 +12,7 @@ void sanic_init() {
   sanic_log_level = LEVEL_TRACE;
 
   if (pthread_mutex_init(&print_mu, NULL) != 0) {
-    sanic_log_error("mutex init failed")
+    sanic_log_error("mutex init failed");
     exit(1);
   }
 

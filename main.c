@@ -29,7 +29,7 @@ enum sanic_middleware_action http_version_filter(struct sanic_http_request *req,
 
 int main() {
   sanic_init();
-  sanic_log_level = LEVEL_WARN;
+  sanic_log_level = LEVEL_DEBUG;
 
   sanic_use_middleware(^enum sanic_middleware_action(struct sanic_http_request *req, struct sanic_http_response *res) {
     return http_version_filter(req, res);
@@ -44,7 +44,7 @@ int main() {
   });
 
   sanic_http_on_get("/", ^void(struct sanic_http_request *req, struct sanic_http_response *res) {
-    res->response_body = "<h1>Hello, World!</h1>";
+    res->response_body = GC_STRDUP("<h1>Hello, World!</h1>");
     sanic_http_header_insert(res, &(struct sanic_http_param) {
       .key = "Hotel",
       .value = "Trivago",

@@ -4,7 +4,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
 
 #include "../include/log.h"
 #include "../include/internal/request_handler.h"
@@ -15,10 +16,17 @@
 #include "../include/internal/middleware_handler.h"
 
 void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_response *res, char *addr_str) {
-  FILE *conn_file = fdopen(req->conn_fd, "w+");
+  if (req->conn_file == NULL) {
+    sanic_log_warn_req(req, "file is not open");
+
+    if ((req->conn_file = fdopen(req->conn_fd, "w+")) == NULL) {
+      sanic_fmt_log_warn_req(req, "could not open file: %s", strerror(errno));
+      return;
+    }
+  }
 
   int status = res->status == -1 ? 404 : res->status;
-  fprintf(conn_file, "HTTP/1.1 %d %s\n", status, sanic_get_status_text(status));
+  fprintf(req->conn_file, "HTTP/1.1 %d %s\n", status, sanic_get_status_text(status));
 
   struct sanic_http_param closed_header = (struct sanic_http_param) {
     .key = "Connection",
@@ -29,42 +37,42 @@ void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_resp
 
   struct sanic_http_param **current = &res->headers;
   while (*current != NULL) {
-    fprintf(conn_file, "%s: %s\n", (*current)->key, (*current)->value);
+    fprintf(req->conn_file, "%s: %s\n", (*current)->key, (*current)->value);
     current = &(*current)->next;
   }
 
   if (res->response_body != NULL) {
-    fprintf(conn_file, "\n%s", res->response_body);
+    fprintf(req->conn_file, "\n%s", res->response_body);
   } else {
-    fprintf(conn_file, "\n");
+    fprintf(req->conn_file, "\n");
   }
 
-  fflush(conn_file);
+  if (fclose(req->conn_file) != 0) {
+    sanic_fmt_log_warn_req(req, "could not close file: %s", strerror(errno));
+  }
 
-  if (close(req->conn_fd) == 0) {
-    sanic_fmt_log_debug_req(req, "closed connection to %s", addr_str)
-  } else {
-    sanic_fmt_log_warn("failed to close connection to %s", addr_str)
+  if (fcntl(req->conn_fd, F_GETFD) == 0) {
+    if (close(req->conn_fd) == 0) {
+      sanic_fmt_log_debug_req(req, "closed connection to %s", addr_str);
+    } else {
+      sanic_fmt_log_warn("failed to close connection to %s: %s", addr_str, strerror(errno));
+    }
   }
 
   GC_FREE(req);
   GC_FREE(res);
 }
 
-struct connection_thread_data {
-    int conn_fd;
-    struct sockaddr_in conn_addr;
-    struct sanic_http_request *init_req;
-};
+//TODO: separate this into sanic_handle_connection_establish and sanic_handle_connection_respond for io_uring
 
-void sanic_connection_thread(int conn_fd, struct sockaddr_in conn_addr, struct sanic_http_request *init_req) {
+void sanic_handle_connection(struct sockaddr_in *conn_addr, struct sanic_http_request *init_req) {
   char addr_str[INET_ADDRSTRLEN];
-  inet_ntop(AF_INET, &(conn_addr.sin_addr), addr_str, INET_ADDRSTRLEN);
-  sanic_fmt_log_info_req(init_req, "serving %s", addr_str)
+  inet_ntop(AF_INET, &(conn_addr->sin_addr), addr_str, INET_ADDRSTRLEN);
+  sanic_fmt_log_info_req(init_req, "serving %s", addr_str);
 
-  struct sanic_http_request *request = sanic_read_request(conn_fd, init_req);
+  struct sanic_http_request *request = sanic_read_request(init_req->conn_fd, init_req);
   if (request == NULL) {
-    sanic_log_warn_req(init_req, "there was an error reading the request")
+    sanic_log_warn_req(init_req, "there was an error reading the request");
     sanic_finish_request(init_req, &(struct sanic_http_response) {
       .status = 400,
     }, addr_str);
@@ -107,7 +115,7 @@ void sanic_connection_thread(int conn_fd, struct sockaddr_in conn_addr, struct s
   route_found:
 
   if (*current_route == NULL) {
-    sanic_fmt_log_warn_req(request, "no route for %s %s found", sanic_http_method_to_str(request->method), request->path)
+    sanic_fmt_log_warn_req(request, "no route for %s %s found", sanic_http_method_to_str(request->method), request->path);
     sanic_finish_request(request, response, addr_str);
     return;
   }
@@ -121,42 +129,8 @@ void sanic_connection_thread(int conn_fd, struct sockaddr_in conn_addr, struct s
     }
   }
 
-  sanic_fmt_log_trace_req(request, "handling request for route %s %s", sanic_http_method_to_str(request->method), request->path)
+  sanic_fmt_log_trace_req(request, "handling request for route %s %s", sanic_http_method_to_str(request->method), request->path);
   response->status = 200;
   (*current_route)->callback(request, response);
   sanic_finish_request(request, response, addr_str);
-}
-
-void *connection_thread_bootstrap(void *thread_data) {
-  struct connection_thread_data *thread_data_struct = thread_data;
-  sanic_connection_thread(thread_data_struct->conn_fd, thread_data_struct->conn_addr, thread_data_struct->init_req);
-  free(thread_data);
-
-  GC_gcollect_and_unmap();
-
-#if GC_DEBUG
-  GC_dump();
-
-  struct rusage usage;
-  getrusage(RUSAGE_SELF, &usage);
-  printf("Memory usage: %ld kilobytes\n", usage.ru_maxrss);
-#endif
-
-  return NULL;
-}
-
-void sanic_handle_connection(int conn_fd, struct sockaddr_in conn_addr, struct sanic_http_request *init_req) {
-  struct connection_thread_data *thread_data = malloc(sizeof(struct connection_thread_data));
-  thread_data->conn_fd = conn_fd;
-  thread_data->conn_addr = conn_addr;
-  thread_data->init_req = init_req;
-
-  //TODO: add ring buffer for threads
-  //if the buffer is full, join the first inserted pthread
-  //and remove it from the ringbuffer
-  //then insert the new thread
-
-  pthread_t conn_thread;
-  GC_pthread_create(&conn_thread, NULL, connection_thread_bootstrap, thread_data);
-  GC_pthread_join(conn_thread, NULL);
 }

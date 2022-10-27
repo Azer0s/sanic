@@ -2,12 +2,14 @@
 #define SANIC_HTTP_REQUEST_H
 
 #include <stddef.h>
+#include <stdio.h>
 #include "http_method.h"
 #include "internal/http_param.h"
 
 struct sanic_http_request {
     char *req_id;
     int conn_fd;
+    FILE *conn_file;
 
     char *path;
     char **path_parts;

@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <gc.h>
+#include <errno.h>
 
 #include "../include/internal/request_util.h"
 #include "../include/http_method.h"
@@ -158,8 +159,8 @@ struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request 
   //fcntl(fd, F_SETFL, flags | O_NONBLOCK);
   FILE *conn_file;
 
-  if ((conn_file = fdopen(fd, "r")) == NULL) {
-    //TODO: report error
+  if ((conn_file = fdopen(fd, "w+")) == NULL) {
+    sanic_fmt_log_warn_req(init_req, "could not open file: %s", strerror(errno));
     return NULL;
   }
 
@@ -181,6 +182,7 @@ struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request 
 
   struct sanic_http_request *request = GC_MALLOC(sizeof(struct sanic_http_request));
   request->conn_fd = fd;
+  request->conn_file = conn_file;
   request->req_id = init_req->req_id;
   request->headers = NULL;
 
@@ -217,7 +219,7 @@ struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request 
       char *buffer = GC_MALLOC_ATOMIC(len + 1);
       bzero(buffer, len + 1);
       if (!fread(buffer, len, 1, conn_file)) {
-        sanic_log_warn_req(request, "could not read the request body")
+        sanic_log_warn_req(request, "could not read the request body");
         return NULL;
       }
 
@@ -227,5 +229,10 @@ struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request 
 
   free(tmp);
   free(block);
+
+  if (request->path == NULL || request->version == NULL) {
+    return NULL;
+  }
+
   return request;
 }
