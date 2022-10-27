@@ -47,6 +47,3 @@ add_library(sanic STATIC
         internal/string_util.c internal/server_internals.c)
 target_link_libraries(sanic PUBLIC gc)
 target_link_libraries(sanic PUBLIC uuid4)
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    target_link_libraries(sanic PUBLIC uring)
-endif()

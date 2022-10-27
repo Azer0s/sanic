@@ -2,7 +2,7 @@
 
 ## sanic - Gotta go fast.
 
-Sanic is a simple, small, express-ish HTTP framework built in C. Supports `kqueue` and soon `io_uring`.
+Sanic is a simple, small, express-ish HTTP framework built in C. Supports `kqueue` and `epoll`.
 
 ### Example - clang blocks
 
