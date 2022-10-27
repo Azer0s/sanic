@@ -25,6 +25,11 @@ char *sig2str(int signum) {
   return (char*) sys_signame[signum];
 }
 
+struct sanic_kqueue_connection_data {
+  char *req_id;
+  struct sockaddr_in *conn_addr;
+};
+
 int sanic_http_serve(uint16_t port) {
   sanic_setup_interrupts(NULL, sig2str);
   int code = sanic_create_socket(port);
@@ -43,11 +48,6 @@ int sanic_http_serve(uint16_t port) {
     //TODO: report error
     return 1;
   }
-
-  struct connection_kqueue_data {
-    char *req_id;
-    struct sockaddr_in *conn_addr;
-  };
 
   while (!stop) {
     int new_events = kevent(kq, NULL, 0, event, 4, NULL);
@@ -80,7 +80,7 @@ int sanic_http_serve(uint16_t port) {
           continue;
         }
 
-        struct connection_kqueue_data *conn_data = malloc(sizeof(struct connection_kqueue_data));;
+        struct sanic_kqueue_connection_data *conn_data = malloc(sizeof(struct sanic_kqueue_connection_data));
         EV_SET(change_event, conn_fd, EVFILT_READ, EV_ADD, 0, 0, conn_data);
 
         if (kevent(kq, change_event, 1, NULL, 0, NULL) < 0) {
@@ -93,7 +93,7 @@ int sanic_http_serve(uint16_t port) {
         conn_data->req_id = req_id;
         conn_data->conn_addr = conn_addr;
       } else if (event[i].filter & EVFILT_READ) {
-        struct connection_kqueue_data *conn_data = event[i].udata;
+        struct sanic_kqueue_connection_data *conn_data = event[i].udata;
         struct sanic_http_request tmp_request = {
           .req_id = conn_data->req_id,
           .conn_fd = event_fd
