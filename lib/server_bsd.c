@@ -5,17 +5,13 @@
 #include <signal.h>
 #include <stdio.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #include <string.h>
-#include <errno.h>
 #include <uuid4.h>
 #include <gc.h>
 #include <sys/event.h>
 
-#include "include/internal/sanic_ascii.h"
 #include "include/log.h"
 #include "include/internal/request_handler.h"
-#include "include/internal/string_util.h"
 #include "include/internal/server_internals.h"
 
 volatile sig_atomic_t stop;
