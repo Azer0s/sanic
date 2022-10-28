@@ -13,7 +13,7 @@
 #include "../include/log.h"
 #include "../include/internal/string_util.h"
 
-void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n) {
+void parse_request_meta(struct sanic_http_request *request, char *tmp, size_t n) {
   int i = 0;
   while (tmp[i] != ' ') {
     ++i;
@@ -126,7 +126,7 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, ssize_t n
   GC_FREE(method);
 }
 
-void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t n) {
+void parse_request_header(struct sanic_http_request *request, char *tmp, size_t n) {
   //TODO: check header for format validity
 
   int i = 0;
@@ -149,58 +149,37 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, ssize_t
   sanic_http_param_insert(&request->headers, new);
 }
 
-struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request *init_req) {
+struct sanic_http_request *sanic_read_request(uv_buf_t *buff, struct sanic_http_request *init_req) {
   //TODO: Add error handling for invalid HTTP requests
   //TODO: Add cookie support
-
-  //int flags = fcntl(fd, F_GETFL, 0);
-  //fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-  FILE *conn_file;
-
-  if ((conn_file = fdopen(fd, "w+")) == NULL) {
-    sanic_fmt_log_warn_req(init_req, "could not open file: %s", strerror(errno));
-    return NULL;
-  }
-
-  size_t size = 1;
-  char *block = malloc(sizeof(char) * size);
-  *block = '\0';
-
-  //We malloc this because getline sometimes does system reallocs
-  char *tmp = malloc(sizeof(char) * size);
-  *tmp = '\0';
-
-  size_t old_size = 1;
-
   enum {
       PATH,
       HEADER,
       BODY
   } mode = PATH;
 
-  struct sanic_http_request *request = GC_MALLOC(sizeof(struct sanic_http_request));
-  request->conn_fd = fd;
-  request->conn_file = conn_file;
+  struct sanic_http_request *request = GC_MALLOC_UNCOLLECTABLE(sizeof(struct sanic_http_request));
+  request->conn_fd = init_req->conn_fd;
   request->req_id = init_req->req_id;
   request->headers = NULL;
 
-  ssize_t n;
-  while ((n = getline(&tmp, &size, conn_file)) > 0) {
-    if (strcmp(tmp, "\r\n") == 0) {
+  char *line;
+  char *rest = buff->base;
+
+  //Search for query params
+  while ((line = strtok_r(rest, "\n", &rest))) {
+    if (strcmp(line, "\r") == 0) {
       break;
     }
-    block = realloc(block, size + old_size);
-    old_size += size;
-    strcat(block, tmp);
 
     switch (mode) {
       case PATH:
-        parse_request_meta(request, tmp, n);
+        parse_request_meta(request, line, strlen(line));
         mode = HEADER;
         break;
 
       case HEADER:
-        parse_request_header(request, tmp, n);
+        parse_request_header(request, line, strlen(line));
         break;
 
       default:
@@ -214,19 +193,9 @@ struct sanic_http_request *sanic_read_request(int fd, struct sanic_http_request 
     int len = (int) strtol(content_length->value, &lenEnd, 10);
 
     if (content_length->value != lenEnd) {
-      char *buffer = GC_MALLOC_ATOMIC(len + 1);
-      bzero(buffer, len + 1);
-      if (!fread(buffer, len, 1, conn_file)) {
-        sanic_log_warn_req(request, "could not read the request body");
-        return NULL;
-      }
-
-      request->body = buffer;
+      request->body = GC_STRNDUP(rest, len);;
     }
   }
-
-  free(tmp);
-  free(block);
 
   if (request->path == NULL || request->version == NULL) {
     return NULL;

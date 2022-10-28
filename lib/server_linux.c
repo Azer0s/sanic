@@ -4,8 +4,8 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/epoll.h>
 #include <unistd.h>
+#include <liburing.h>
 #include <uuid4.h>
 #include <gc.h>
 #include <fcntl.h>
@@ -14,59 +14,83 @@
 #include "include/internal/server_internals.h"
 #include "include/http_request.h"
 #include "include/internal/request_handler.h"
+#include "include/internal/middleware_handler.h"
 
-struct sanic_epoll_connection_data {
-  char *req_id;
-  struct sockaddr_in *conn_addr;
-  int conn_fd;
+enum sanic_iouring_type {
+  ACCEPT,
+  READ,
+  WRITE,
+  MIDDLEWARE,
+  HANDLER
 };
 
-int epoll_fd;
+struct sanic_iouring_connection_data {
+  char *req_id;
+  char *addr_str;
+  int conn_fd;
+  struct sanic_http_request *req;
+  struct sanic_http_response *res;
+  enum sanic_iouring_type type;
+};
 
-void stop_epoll() {
-  close(epoll_fd);
+struct io_uring ring;
+
+void sanic_stop_serve_internal() {
+  io_uring_queue_exit(&ring);
+}
+
+char *sanic_sig2str(int signum) {
+  return strsignal(signum);
+}
+
+int add_accept_request(struct sockaddr_in *client_addr, socklen_t *client_addr_len) {
+  struct io_uring_sqe *sqe = io_uring_get_sqe(&ring);
+  io_uring_prep_accept(sqe, sock_fd, (struct sockaddr *) client_addr, client_addr_len, 0);
+  struct sanic_iouring_connection_data *data = GC_MALLOC_UNCOLLECTABLE(sizeof(struct sanic_iouring_connection_data));
+  data->type = ACCEPT;
+  io_uring_sqe_set_data(sqe, data);
+  io_uring_submit(&ring);
+  return 0;
+}
+
+int add_next_step(int conn_fd, enum sanic_iouring_type type, struct sanic_iouring_connection_data *data) {
+  struct io_uring_sqe *sqe = io_uring_get_sqe(&ring);
+  data->type = type;
+  data->conn_fd = conn_fd;
+  io_uring_sqe_set_data(sqe, data);
+  io_uring_submit(&ring);
+  return 0;
 }
 
 int sanic_http_serve(uint16_t port) {
-  sanic_setup_interrupts(NULL, strsignal);
-  int code = sanic_create_socket(port);
 
-  if (code != 0) {
-    return code;
-  }
+  sanic_log_debug("initializing io_uring");
+  io_uring_queue_init(10, &ring, 0);
 
-  sanic_log_debug("initializing epoll");
+  struct io_uring_cqe *cqe;
+  struct sockaddr_in conn_addr;
+  socklen_t len = sizeof(struct sockaddr_in);
 
-  epoll_fd = epoll_create(10);
-  if (epoll_fd < 0) {
-    //TODO: report error
-    return 1;
-  }
-
-  if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock_fd, &(struct epoll_event) {
-    .events = EPOLLIN,
-    .data.fd = sock_fd
-  }) == -1) {
-    //TODO: report error
-    return 1;
-  }
-
-  struct epoll_event events[10];
+  add_accept_request(&conn_addr, &len);
 
   while (!stop) {
-    int new_events = epoll_wait(epoll_fd, events, 10, -1);
-
-    if (new_events == -1) {
-      //TODO: report error
+    int ret = io_uring_wait_cqe(&ring, &cqe);
+    if (ret < 0) {
+      sanic_log_error("io_uring_wait_cqe");
       return 1;
     }
 
-    for (int i = 0; i < new_events; ++i) {
-      if (events[i].data.fd == sock_fd) {
-        struct sockaddr_in *conn_addr = malloc(sizeof(struct sockaddr_in));
-        size_t len = sizeof(*conn_addr);
+    struct sanic_iouring_connection_data *data = (struct sanic_iouring_connection_data *) cqe->user_data;
+    if (cqe->res < 0) {
+      sanic_fmt_log_error("Async request failed: %s for event: %d\n", strerror(-cqe->res), data->type);
+      exit(1);
+    }
 
-        int conn_fd = accept(sock_fd, (struct sockaddr *) conn_addr, (socklen_t *) &len);
+    switch (data->type) {
+      case ACCEPT: {
+        add_accept_request(&conn_addr, &len);
+
+        int conn_fd = accept(sock_fd, (struct sockaddr *) &conn_addr, (socklen_t *) &len);
 
         char req_id[UUID4_LEN] = {0};
         bzero(req_id, 37);
@@ -83,32 +107,52 @@ int sanic_http_serve(uint16_t port) {
           continue;
         }
 
-        struct sanic_epoll_connection_data *conn_data = malloc(sizeof(struct sanic_epoll_connection_data));
-        conn_data->req_id = req_id;
-        conn_data->conn_addr = conn_addr;
-        conn_data->conn_fd = conn_fd;
+        char addr_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &(conn_addr.sin_addr), addr_str, INET_ADDRSTRLEN);
 
-        epoll_ctl(epoll_fd, EPOLL_CTL_ADD, conn_fd, &(struct epoll_event) {
-          .events = EPOLLIN,
-          .data.ptr = conn_data
-        });
+        data->req_id = req_id;
+        data->conn_fd = conn_fd;
+        data->addr_str = GC_STRDUP(addr_str);
+
+        add_next_step(conn_fd, READ, data);
       }
-      else if (events[i].events & EPOLLIN) {
-        struct sanic_epoll_connection_data *conn_data = events[i].data.ptr;
+        break;
+      case READ: {
         struct sanic_http_request tmp_request = {
-          .req_id = conn_data->req_id,
-          .conn_fd = conn_data->conn_fd
+          .req_id = data->req_id,
+          .conn_fd = data->conn_fd
         };
+        struct sanic_proceed_or_reply proceed = sanic_handle_connection_read(&tmp_request, data->addr_str);
+        data->res = proceed.res;
 
-        //TODO: split into read, exec and write
-        sanic_handle_connection(conn_data->conn_addr, &tmp_request);
-        //EV_SET(change_event, conn_fd, EVFILT_WRITE, EV_ADD, 0, 0, conn_data);
-
-        free(conn_data->conn_addr);
-        free(conn_data);
+        if (proceed.reply) {
+          add_next_step(data->conn_fd, WRITE, data);
+        } else {
+          data->req = proceed.req;
+          add_next_step(data->conn_fd, MIDDLEWARE, data);
+        }
+      } break;
+      case WRITE: {
+        sanic_finish_request(data->req, data->res, data->addr_str);
+        GC_FREE(data);
         GC_gcollect_and_unmap();
-      }
+      } break;
+      case MIDDLEWARE: {
+        struct sanic_proceed_or_reply proceed = sanic_handle_middlewares(data->req, data->res, data->addr_str);
+        if (proceed.reply) {
+          data->res = proceed.res;
+          add_next_step(data->conn_fd, WRITE, data);
+        } else {
+          add_next_step(data->conn_fd, HANDLER, data);
+        }
+      } break;
+      case HANDLER: {
+        sanic_handle_connection_make_response(data->req, data->res);
+        add_next_step(data->conn_fd, WRITE, data);
+      } break;
     }
+
+    io_uring_cqe_seen(&ring, cqe);
   }
 }
 

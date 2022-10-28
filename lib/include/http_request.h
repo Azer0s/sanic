@@ -9,7 +9,6 @@
 struct sanic_http_request {
     char *req_id;
     int conn_fd;
-    FILE *conn_file;
 
     char *path;
     char **path_parts;

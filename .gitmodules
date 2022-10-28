@@ -4,3 +4,6 @@
 [submodule "ext/uuid4"]
 	path = ext/uuid4
 	url = https://github.com/rxi/uuid4.git
+[submodule "ext/libuv"]
+	path = ext/libuv
+	url = https://github.com/libuv/libuv.git

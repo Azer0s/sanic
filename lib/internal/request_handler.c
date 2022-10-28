@@ -1,19 +1,16 @@
 #include <stdio.h>
-#include <gc.h>
 #include <unistd.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <uv.h>
+#include <gc.h>
 
 #include "../include/log.h"
 #include "../include/internal/request_handler.h"
-#include "../include/middleware.h"
 #include "../include/route.h"
 #include "../include/internal/request_util.h"
 #include "../include/internal/http_util.h"
-#include "../include/internal/middleware_handler.h"
 
 void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_response *res, char *addr_str) {
   if (req->conn_file == NULL) {
@@ -63,33 +60,34 @@ void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_resp
   GC_FREE(res);
 }
 
-//TODO: separate this into sanic_handle_connection_establish and sanic_handle_connection_respond for io_uring
+struct sanic_proceed_or_reply sanic_handle_connection_read(const uv_buf_t *buff, struct sanic_http_request *init_req, char *addr_str) {
+  struct sanic_proceed_or_reply ret;
+  ret.reply = false;
 
-void sanic_handle_connection(struct sockaddr_in *conn_addr, struct sanic_http_request *init_req) {
-  char addr_str[INET_ADDRSTRLEN];
-  inet_ntop(AF_INET, &(conn_addr->sin_addr), addr_str, INET_ADDRSTRLEN);
   sanic_fmt_log_info_req(init_req, "serving %s", addr_str);
-
-  struct sanic_http_request *request = sanic_read_request(init_req->conn_fd, init_req);
-  if (request == NULL) {
-    sanic_log_warn_req(init_req, "there was an error reading the request");
-    sanic_finish_request(init_req, &(struct sanic_http_response) {
-      .status = 400,
-    }, addr_str);
-    return;
-  }
-
-  struct sanic_http_response *response = GC_MALLOC(sizeof(struct sanic_http_response));
-  response->headers = NULL;
-  response->status = -1;
-
-  if (sanic_handle_middlewares(request, response, addr_str) != ACTION_PASS) {
-    return;
-  }
 
   //TODO: add request validation
   //TODO: add options for auto deserialization
+  struct sanic_http_request *request = sanic_read_request(buff, init_req);
+  ret.req = request;
 
+  if (request == NULL) {
+    sanic_log_warn_req(init_req, "there was an error reading the request");
+    ret.reply = true;
+    ret.res = &(struct sanic_http_response) {
+      .status = 400,
+    };
+  }
+
+  struct sanic_http_response *response = GC_MALLOC_UNCOLLECTABLE(sizeof(struct sanic_http_response));
+  response->headers = NULL;
+  response->status = -1;
+  ret.res = response;
+
+  return ret;
+}
+
+void sanic_handle_connection_make_response(struct sanic_http_request *request, struct sanic_http_response *response) {
   struct sanic_route **current_route = &routes;
   while (1) {
     if (*current_route == NULL) {
@@ -116,7 +114,6 @@ void sanic_handle_connection(struct sockaddr_in *conn_addr, struct sanic_http_re
 
   if (*current_route == NULL) {
     sanic_fmt_log_warn_req(request, "no route for %s %s found", sanic_http_method_to_str(request->method), request->path);
-    sanic_finish_request(request, response, addr_str);
     return;
   }
 
@@ -132,5 +129,4 @@ void sanic_handle_connection(struct sockaddr_in *conn_addr, struct sanic_http_re
   sanic_fmt_log_trace_req(request, "handling request for route %s %s", sanic_http_method_to_str(request->method), request->path);
   response->status = 200;
   (*current_route)->callback(request, response);
-  sanic_finish_request(request, response, addr_str);
 }

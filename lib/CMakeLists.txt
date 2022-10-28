@@ -11,6 +11,9 @@ add_definitions(-DPARALLEL_MARK)
 add_definitions(-DTHREAD_LOCAL_ALLOC)
 set(enable_threads ON)
 
+add_subdirectory(../ext/libuv "${CMAKE_CURRENT_BINARY_DIR}/ext/libuv")
+include_directories(../ext/libuv/include)
+
 add_subdirectory(../ext/bdwgc "${CMAKE_CURRENT_BINARY_DIR}/ext/bdwgc")
 include_directories(../ext/bdwgc/include)
 
@@ -20,16 +23,6 @@ include_directories(../ext/uuid4/src)
 add_definitions(-Wno-string-plus-int)
 add_definitions(-Wno-format-extra-args)
 
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    add_definitions(-DSANIC_IO_URING)
-    set(server_impl server_linux.c)
-elseif (UNIX)
-    add_definitions(-DSANIC_KQUEUE)
-    set(server_impl server_bsd.c)
-else()
-    message( FATAL_ERROR "sanic is not supported on this system :(" )
-endif()
-
 add_library(sanic STATIC
         http_method.c
         http_request.c
@@ -37,13 +30,15 @@ add_library(sanic STATIC
         middleware.c
         route.c
         sanic.c
-        ${server_impl}
+        server.c
 
         internal/http_util.c
         internal/http_param.c
         internal/request_handler.c
         internal/request_util.c
         internal/middleware_handler.c
-        internal/string_util.c internal/server_internals.c)
+        internal/string_util.c
+        internal/server_internals.c)
 target_link_libraries(sanic PUBLIC gc)
 target_link_libraries(sanic PUBLIC uuid4)
+target_link_libraries(sanic PUBLIC uv)
