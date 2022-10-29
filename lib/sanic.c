@@ -17,7 +17,7 @@ void sanic_init() {
   }
 
   GC_INIT();
-  GC_allow_register_threads();
+  //GC_allow_register_threads();
   GC_enable_incremental();
 
   uuid4_init();

@@ -12,7 +12,72 @@
 #include "../include/internal/request_util.h"
 #include "../include/internal/http_util.h"
 
-void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_response *res, char *addr_str) {
+size_t sanic_calculate_response_size(struct sanic_http_response *res) {
+  size_t size = 0;
+  size += 8; //strlen("HTTP/1.1")
+  size += 3; //status code 000-999
+
+  int status = res->status == -1 ? 404 : res->status;
+  size += strlen(sanic_get_status_text(status));
+  size++; //newline
+
+  bool has_closed_header = false;
+  struct sanic_http_param **current = &res->headers;
+  while (*current != NULL) {
+    if (strcmp((*current)->key, "Connection") == 0) {
+      has_closed_header = true;
+      size += 10; //strlen("Connection")
+    } else {
+      size += strlen((*current)->key);
+    }
+
+    size += 2; //strlen(": ")
+    size += strlen((*current)->value);
+    size++; //newline
+
+    current = &(*current)->next;
+  }
+
+  if (!has_closed_header) {
+    size += 10; //strlen("Connection")
+    size += 2; //strlen(": ")
+    size += 6; //strlen("Closed")
+    size++; //newline
+  }
+
+  size++; //newline
+  if (res->response_body != NULL) {
+    size += strlen(res->response_body);
+  }
+
+  return size; //newline
+}
+
+void sanic_write_response(char *buff, struct sanic_http_request *req, struct sanic_http_response *res) {
+  int status = res->status == -1 ? 404 : res->status;
+  int offset = sprintf(buff, "HTTP/1.1 %d %s\n", status, sanic_get_status_text(status));
+
+  struct sanic_http_param closed_header = (struct sanic_http_param) {
+    .key = "Connection",
+    .value = "Closed"
+  };
+
+  sanic_http_param_insert(&res->headers, &closed_header);
+
+  struct sanic_http_param **current = &res->headers;
+  while (*current != NULL) {
+    offset += sprintf(buff + offset, "%s: %s\n", (*current)->key, (*current)->value);
+    current = &(*current)->next;
+  }
+
+  if (res->response_body != NULL) {
+    sprintf(buff + offset, "\n%s", res->response_body);
+  } else {
+    sprintf(buff + offset, "\n");
+  }
+}
+
+/*void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_response *res, char *addr_str) {
   if (req->conn_file == NULL) {
     sanic_log_warn_req(req, "file is not open");
 
@@ -58,7 +123,7 @@ void sanic_finish_request(struct sanic_http_request *req, struct sanic_http_resp
 
   GC_FREE(req);
   GC_FREE(res);
-}
+}*/
 
 struct sanic_proceed_or_reply sanic_handle_connection_read(const uv_buf_t *buff, struct sanic_http_request *init_req, char *addr_str) {
   struct sanic_proceed_or_reply ret;

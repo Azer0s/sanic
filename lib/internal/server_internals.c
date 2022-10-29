@@ -10,11 +10,9 @@
 #include <gc.h>
 #include <errno.h>
 
-#include "../include/internal/sanic_ascii.h"
 #include "../include/log.h"
 #include "../include/internal/server_internals.h"
 #include "../include/internal/string_util.h"
-#include "../include/server.h"
 
 void shutdown_server() {
   sanic_log_info("shutting down server");
@@ -28,7 +26,12 @@ void shutdown_server() {
 }
 
 void sig_handler(int signum) {
-  char *sig_name = GC_STRDUP(sanic_sig2str(signum));
+#if __APPLE__
+  char *sig_name = GC_STRDUP(sys_signame[signum]);
+#elif __linux__
+  char *sig_name = GC_STRDUP(strsignal(signum));
+#endif
+
   sanic_fmt_log_debug("received interrupt: SIG%s", str_uppercase(sig_name, strlen(sig_name)));
   shutdown_server();
   exit(0);

@@ -84,13 +84,13 @@ enum sanic_middleware_action teapot_filter(struct sanic_http_request *req, struc
 
 int main() {
   sanic_init();
-  sanic_log_level = LEVEL_DEBUG;
+  sanic_log_level = LEVEL_ERROR;
 
-  sanic_use_middleware(http_version_filter);
-  sanic_use_middleware(teapot_filter);
+  //sanic_use_middleware(http_version_filter);
+  //sanic_use_middleware(teapot_filter);
 
   sanic_http_on_get("/", handle_index);
-  sanic_http_on_get("/people/{:name}", handle_get_person);
+  //sanic_http_on_get("/people/{:name}", handle_get_person);
 
   return sanic_http_serve(8080);
 }

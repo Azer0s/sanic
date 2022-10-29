@@ -118,7 +118,7 @@ void parse_request_meta(struct sanic_http_request *request, char *tmp, size_t n)
 
   if (i <= n) {
     i++;
-    ssize_t to = n - 2;
+    size_t to = n - 1;
     char *version = GC_STRNDUP(tmp + i, to - i);
     request->version = version;
   }
@@ -138,7 +138,7 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, size_t 
 
   i += 2; //skip ': '
 
-  ssize_t to = n - 2;
+  size_t to = n - 1;
   char *value = GC_STRNDUP(tmp + i, to - i);
 
   struct sanic_http_param *new = GC_MALLOC(sizeof(struct sanic_http_param));
@@ -149,7 +149,7 @@ void parse_request_header(struct sanic_http_request *request, char *tmp, size_t 
   sanic_http_param_insert(&request->headers, new);
 }
 
-struct sanic_http_request *sanic_read_request(uv_buf_t *buff, struct sanic_http_request *init_req) {
+struct sanic_http_request *sanic_read_request(const uv_buf_t *buff, struct sanic_http_request *init_req) {
   //TODO: Add error handling for invalid HTTP requests
   //TODO: Add cookie support
   enum {

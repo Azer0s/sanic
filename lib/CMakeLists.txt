@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.21)
 project(sanic C)
 
-set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD 23)
 
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
-add_definitions(-DGC_THREADS)
-add_definitions(-DPARALLEL_MARK)
-add_definitions(-DTHREAD_LOCAL_ALLOC)
-set(enable_threads ON)
+#add_definitions(-DGC_THREADS)
+#add_definitions(-DPARALLEL_MARK)
+#add_definitions(-DTHREAD_LOCAL_ALLOC)
+#set(enable_threads ON)
 
 add_subdirectory(../ext/libuv "${CMAKE_CURRENT_BINARY_DIR}/ext/libuv")
 include_directories(../ext/libuv/include)

@@ -2,7 +2,7 @@
 #include "../include/log.h"
 #include "../include/internal/request_handler.h"
 
-struct sanic_proceed_or_reply sanic_handle_middlewares(struct sanic_http_request *req, struct sanic_http_response *res, char *addr_str) {
+struct sanic_proceed_or_reply sanic_process_middlewares(struct sanic_http_request *req, struct sanic_http_response *res, char *addr_str) {
   struct sanic_proceed_or_reply ret;
 
   sanic_fmt_log_trace_req(req, "processing middleware for %s", addr_str);
