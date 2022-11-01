@@ -141,7 +141,7 @@ void sanic_handle_new_connection(uv_stream_t *server, int status) {
     return;
   }
 
-  uv_tcp_t *client = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
+  uv_tcp_t *client = GC_MALLOC(sizeof(uv_tcp_t));
 
   struct sanic_uv_data *data = GC_MALLOC_UNCOLLECTABLE(sizeof(struct sanic_uv_data));
   data->client = client;
